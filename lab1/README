@@ -1,1 +1,8 @@
 (jguti151)
+Special instructions:
+	make run - to run the program and only print stdout
+	make error - to run the program and only print stderr
+	make debug - to run the program and print stdout and stderr
+Other things:
+	I am on the waitlist not enrolled into the class yet
+

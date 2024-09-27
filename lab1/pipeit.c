@@ -94,13 +94,15 @@ int main(void) {
 
     int status;
     waitpid(child_ls, &status, 0);
-    if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
-        fprintf(stderr, "ls child exited successfully\n");
-    }
+    if (!(WIFEXITED(status) && WEXITSTATUS(status) == 0)) {
+        fprintf(stderr, "ls child exited bad\n");
+	exit(EXIT_FAILURE);    
+}
 
     waitpid(child_sort, &status, 0);
-    if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
-        fprintf(stderr, "sort child exited successfully\n");
+    if (!(WIFEXITED(status) && WEXITSTATUS(status) == 0)) {
+        fprintf(stderr, "sort child exited badly\n");
+	exit(EXIT_FAILURE);
     }
     
     close(outfile_fd);
