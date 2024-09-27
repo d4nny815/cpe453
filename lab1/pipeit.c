@@ -77,7 +77,8 @@ int main(void) {
 
             close(pipe2[1]);
 
-            int outfile_fd = open("outfile", O_CREAT | O_WRONLY, 0644);
+            int outfile_fd = open("outfile", 
+				  O_CREAT | O_WRONLY | O_TRUNC, 0644);
             if (outfile_fd == -1) {
                 perror("could make fd for outfile");
                 return EXIT_FAILURE;
@@ -109,7 +110,6 @@ int main(void) {
     }
     
     fprintf(stderr, "DONE WITH EVERYTHING\n");
-    fprintf(stdout, "DONE WITH EVERYTHING\n");
 
     return EXIT_SUCCESS;
 }
