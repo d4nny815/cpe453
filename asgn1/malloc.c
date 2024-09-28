@@ -58,7 +58,7 @@ struct HeapChunk_t* get_next_free_chunk(size_t size) {
     //TODO: req more if not enough
     while (cur) {
         if (!cur->in_use && cur->size > size) {
-            fprintf(stderr, "free chunk at %p\n", cur);
+            //fprintf(stderr, "free chunk at %p\n", cur);
             return cur;
         }
         cur = cur->next;
