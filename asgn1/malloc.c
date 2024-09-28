@@ -2,7 +2,12 @@
 #include <unistd.h>
 
 // static struct HeapInfo_t heap_info = {NULL, 0};
+void* malloc(size_t size) {
 
+    return NULL;
+}
+
+/*
 void init_heap() {
   void* start_ptr = sbrk(0);
   // heap_info.start_ptr = (struct heapchunk_t*)start_ptr;
@@ -11,7 +16,7 @@ void init_heap() {
   
   return;
 }
-
+*/
 
 /*
     check if heap exist

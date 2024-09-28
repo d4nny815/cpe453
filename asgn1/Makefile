@@ -1,17 +1,6 @@
 CC = gcc
-CFLAGS = -Wall -std=c99 -g -fPIC
-NICO_LIB = nico_lib
-.PHONY: run clean
-
-
-main: main.o
-	$(CC) $(CFLAGS) main.o libmalloc.o -o main
-
-main.o: main.c
-	$(CC) -L $(NICO_LIB) $(CFLAGS) main.c -o main.o
-
-
-
+CFLAGS = -Wall -g -fPIC
+NICO_LIB = ~pn-cs453/demos/lib 
 
 
 intel-all: lib/libmalloc.so lib64/libmalloc.so
@@ -34,10 +23,5 @@ malloc32.o: malloc.c
 malloc64.o: malloc.c
 	$(CC) $(CFLAGS) -m64 -c -o malloc64.o malloc.c
 
-
-
-run: main
-	./main
-
 clean:
-	rm -f *~ TAGS
+	rm -f malloc.o *~ TAGS
