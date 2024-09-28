@@ -10,6 +10,8 @@
 #define VOIDPTR_TO_INTPTR(x) ((intptr_t*)x)
 #define CHUNK_HEADER_SIZE (sizeof(struct HeapChunk_t))
 #define IS_DIV_16(x) (!(x % 16))
+
+
 struct HeapInfo_t {
   struct HeapChunk_t* start_ptr;
   size_t avail_mem;

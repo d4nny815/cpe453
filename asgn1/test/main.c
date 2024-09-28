@@ -8,10 +8,12 @@
 int main(int argc, char** argv) {
 //    printf("size of heapinfo %ld, size of heapchunk %ld\n", 
 //            sizeof(struct HeapInfo_t), sizeof(struct HeapChunk_t));
+    print_heap();
     char* p1 = (char*) mymalloc(PRINT_BUF_SIZE);
-    char* p2 = NULL;
-    //char* p2 = (char*) mymalloc(PRINT_BUF_SIZE);
-    fprintf(stderr, "p1 at %p p2 at %p\n", p1, p2);
+    char* p2 = (char*) mymalloc(2 * PRINT_BUF_SIZE);
+    char* p3 = (char*) mymalloc(PRINT_BUF_SIZE / 2);
+    char* p4 = (char*) mymalloc(PRINT_BUF_SIZE / 10);
+    fprintf(stderr, "p1: %p, p2: %p, p3: %p, p4:%p\n", p1, p2, p3, p4);
 
     print_heap();
 
