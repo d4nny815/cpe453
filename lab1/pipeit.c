@@ -97,7 +97,7 @@ int main(void) {
     if (!(WIFEXITED(status) && WEXITSTATUS(status) == 0)) {
         fprintf(stderr, "ls child exited bad\n");
 	exit(EXIT_FAILURE);    
-}
+    }
 
     waitpid(child_sort, &status, 0);
     if (!(WIFEXITED(status) && WEXITSTATUS(status) == 0)) {
