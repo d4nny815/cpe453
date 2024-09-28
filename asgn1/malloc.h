@@ -6,23 +6,25 @@
 #include "stdint.h"
 #include "stdbool.h"
 
-#define HEAP_INC_AMOUNT (1 << 16)
-#define VOIDPTR_TO_INTPTR(x) ((intptr_t*)x)
+// #define HEAP_INC_AMOUNT (1 << 16)
+#define HEAP_INC_AMOUNT (1 << 20)
 #define CHUNK_HEADER_SIZE (sizeof(struct HeapChunk_t))
 #define IS_DIV_16(x) (!(x % 16))
+#define MAKE_DIV_16(x) ((x + 16) & ~0xf)
 
 
 struct HeapInfo_t {
-  struct HeapChunk_t* start_ptr;
+  struct HeapChunk_t* p_start;
   size_t avail_mem;
+  bool exists;
 };
 
-struct HeapChunk_t {
+typedef struct HeapChunk_t {
   struct HeapChunk_t* next;
-  struct heapChunk_t* prev;
+  struct HeapChunk_t* prev;
   bool in_use;
   int size;
-};
+} HeapChunk_t;
 
 
 
@@ -33,10 +35,14 @@ void myfree(void* ptr);
 
 
 void init_heap();
+
+HeapChunk_t* create_chunk(size_t size);
+void* get_chunk_data_ptr(HeapChunk_t* chunk);
+HeapChunk_t* get_next_free_chunk(size_t size);
+
+
 void print_heap();
-void print_chunk(struct HeapChunk_t* chunk);
-struct HeapChunk_t* create_chunk(size_t size);
-void* get_chunk_data_ptr(struct HeapChunk_t* chunk);
-struct HeapChunk_t* get_next_free_chunk(size_t size);
+void print_chunk(HeapChunk_t* chunk);
+
 
 #endif /* LIBMALLOC_H */

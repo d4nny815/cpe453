@@ -17,6 +17,12 @@ int main(int argc, char** argv) {
 
     print_heap();
 
+    myfree(p1);
+    myfree(p3);
+    fprintf(stderr, "free p1 and p2\n");
+    
+    print_heap();
+
  //   plnprintf(stdout, "testing print");
 
   return 0;
