@@ -23,6 +23,11 @@ int main(int argc, char** argv) {
     
     print_heap();
 
+    p1 = mymalloc(PRINT_BUF_SIZE / 2);
+    fprintf(stderr, "p1 now at %p\n", p1);
+
+    print_heap();
+
  //   plnprintf(stdout, "testing print");
 
   return 0;

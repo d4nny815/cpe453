@@ -28,6 +28,8 @@ void* mymalloc(size_t size) {
     }
     HeapChunk_t* chunk_ptr = create_chunk(size);
 
+    // TODO: split a free chunk smaller when inbetween used blocks 
+
     return get_chunk_data_ptr(chunk_ptr);
 }
 
@@ -86,7 +88,7 @@ void* get_chunk_data_ptr(HeapChunk_t* chunk) {
 
 void print_chunk(HeapChunk_t* chunk) {
     fprintf(stderr, 
-            "chunk info - start %p next: %p prev %p in_use %d size %d data_ptr %p\n", 
+            "chunk info - p_start %p next: %p prev: %p in_use: %d size: %d p_data: %p\n", 
             chunk, chunk->next, chunk->prev, chunk->in_use, chunk->size, 
             get_chunk_data_ptr(chunk));
     return;
@@ -98,7 +100,7 @@ void print_heap() {
     }
 
     HeapChunk_t* cur = heap_info.p_start;
-    fprintf(stderr, "\n[HEAP]\n start: %p avail_mem %lu\n", heap_info.p_start, heap_info.avail_mem);
+    fprintf(stderr, "\n[HEAP]\nstart: %p avail_mem %lu\n", heap_info.p_start, heap_info.avail_mem);
     while (cur != NULL) {
         print_chunk(cur);
         cur = cur->next;

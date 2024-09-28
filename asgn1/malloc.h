@@ -6,8 +6,8 @@
 #include "stdint.h"
 #include "stdbool.h"
 
-// #define HEAP_INC_AMOUNT (1 << 16)
-#define HEAP_INC_AMOUNT (1 << 20)
+#define HEAP_INC_AMOUNT (1 << 16)
+// #define HEAP_INC_AMOUNT (1 << 20)
 #define CHUNK_HEADER_SIZE (sizeof(struct HeapChunk_t))
 #define IS_DIV_16(x) (!(x % 16))
 #define MAKE_DIV_16(x) ((x + 16) & ~0xf)
