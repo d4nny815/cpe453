@@ -1,20 +1,21 @@
 //#include <plnprint.h>
 #include "stdio.h"
-
+#include "../malloc.h"
 
 #define PRINT_BUF_SIZE (1500)
 
 
 int main(int argc, char** argv) {
-    // printf("size of heapinfo %ld, size of heapchunk %ld\n", sizeof(struct HeapInfo_t), sizeof(struct Heapchunk_t));
+//    printf("size of heapinfo %ld, size of heapchunk %ld\n", 
+//            sizeof(struct HeapInfo_t), sizeof(struct HeapChunk_t));
+    char* p1 = (char*) mymalloc(PRINT_BUF_SIZE);
+    char* p2 = NULL;
+    //char* p2 = (char*) mymalloc(PRINT_BUF_SIZE);
+    fprintf(stderr, "p1 at %p p2 at %p\n", p1, p2);
 
-    char print_buf[PRINT_BUF_SIZE];
-    snprintf(print_buf, PRINT_BUF_SIZE, "hello world\n");
-    puts(print_buf);
+    print_heap();
 
  //   plnprintf(stdout, "testing print");
-
-  // init_heap();
 
   return 0;
 }
