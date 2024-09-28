@@ -1,10 +1,10 @@
 #ifndef LIBMALLOC_H
 #define LIBMALLOC_H
 
+#include <unistd.h>
 #include "stdio.h"
 #include "stdint.h"
 #include "stdbool.h"
-#include <unistd.h>
 
 #define HEAP_AMOUNT (1 << 16)
 #define VOIDPTR_TO_INTPTR(x) ((intptr_t*)x)
@@ -22,9 +22,9 @@ struct Heapchunk_t {
 };
 
 
-void* mymalloc(size_t size);
-void* myrealloc(void* ptr, size_t size);
-void* mycalloc(size_t nmemb, size_t size);
+void* malloc(size_t size);
+void* realloc(void* ptr, size_t size);
+void* calloc(size_t nmemb, size_t size);
 void myfree(void* ptr);
 
 
