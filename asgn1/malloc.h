@@ -27,12 +27,10 @@ typedef struct HeapChunk_t {
 } HeapChunk_t;
 
 
-
 void* mymalloc(size_t size);
 void* myrealloc(void* ptr, size_t size);
 void* mycalloc(size_t nmemb, size_t size);
 void myfree(void* ptr);
-
 
 void init_heap();
 

@@ -4,6 +4,7 @@ static struct HeapInfo_t heap_info;
 
 void init_heap() {
     // TODO: error check sbrk
+    // TODO: check is start addr div by 16
     void* start_ptr = sbrk(HEAP_INC_AMOUNT); // FIXME: maybe sbrk(0) so i dont break
     heap_info.p_start = (HeapChunk_t*)start_ptr;
     heap_info.avail_mem = HEAP_INC_AMOUNT - CHUNK_HEADER_SIZE; 
