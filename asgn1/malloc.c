@@ -1,14 +1,15 @@
 #include "malloc.h"
 
+// TODO: fix assumption that header is 32B
+
 static struct HeapInfo_t heap_info;
 
 int init_heap() {
-    // TODO: error check sbrk
     intptr_t p_cur_end = (intptr_t)sbrk(0);
     intptr_t p_end_div_16 = make_div_16(p_cur_end);
     void* start_ptr = sbrk((p_end_div_16 - p_cur_end) + HEAP_INC_STEP);
     if (start_ptr == (void*)-1) {
-        fprintf(stderr, "FAILED TO ASK FOR MORE");
+        errno = ENOMEM;
         return -1;
     }
 
@@ -21,7 +22,6 @@ int init_heap() {
     heap_info.p_start->in_use = false;
     heap_info.p_start->size = HEAP_INC_STEP - CHUNK_HEADER_SIZE;
 
-    // print_chunk(heap_info.p_start); 
     return INIT_HEAP_PASSED;
 }
 
@@ -33,31 +33,55 @@ void* mymalloc(size_t size) {
         }
     }
     HeapChunk_t* chunk_ptr = create_chunk(size);
-    print_chunk(chunk_ptr);
+    // print_chunk(chunk_ptr);
     return get_chunk_data_ptr(chunk_ptr);
 }
 
-// TODO: ptr can be anywhere in the chunk
-// prob traverse and go until chunk ptr is greater then ptr
+
 void myfree(void* ptr) {
-    HeapChunk_t* p_chunk = (HeapChunk_t*)(((intptr_t) ptr - CHUNK_HEADER_SIZE) & ~0xf);
-    // print_chunk(p_chunk);
+    // fprintf(stderr, "[FREE] %p\n", ptr);
+    HeapChunk_t* p_chunk = heap_info.p_start;
+    while ((intptr_t)p_chunk->next < (intptr_t)ptr) {
+        p_chunk = p_chunk->next;
+    }
+
+    if (p_chunk == NULL) {
+        fprintf(stderr, "[FREE] not a valid ptr");
+        return;
+    }
+
     p_chunk->in_use = 0;
     heap_info.avail_mem += p_chunk->size;
+
+    // TODO: merge chunks around
+    
+    if (p_chunk->next != NULL && !p_chunk->next->in_use) { // merge with block behind
+        HeapChunk_t* p_chunk_behind = p_chunk->next;
+        fprintf(stderr, "Merging %p with %p behind\n", p_chunk, p_chunk_behind);    
+
+        p_chunk->next = p_chunk_behind->next;
+        p_chunk->size += p_chunk_behind->size + CHUNK_HEADER_SIZE; // FIXME
+        p_chunk_behind->prev = p_chunk;
+    } 
+    if (p_chunk->prev != NULL && !p_chunk->prev->in_use) { // merge with block infront
+        HeapChunk_t* p_chunk_infront = p_chunk->prev;
+        fprintf(stderr, "Merging %p with %p infront\n", p_chunk_infront, p_chunk);    
+        p_chunk->next->prev = p_chunk_infront;
+        p_chunk_infront->next = p_chunk->next;
+        p_chunk_infront->size += p_chunk->size;
+
+    }
+
+
     return;
 }
 
 
-/*
-    get a free chunk with enough size
-        if at end
-            give the rest of heap
-        if sandwiched
-            give enough size
-            make a new chunk with remainder
-*/
 HeapChunk_t* create_chunk(size_t size) {
     HeapChunk_t* p_chunk = get_free_chunk(size);
+    if (p_chunk == NULL) {
+        return NULL;
+    }
 
     HeapChunk_t* p_next_chunk = get_chunk_data_ptr(p_chunk);
     p_next_chunk = (HeapChunk_t*)make_div_16((intptr_t)p_next_chunk + size);
@@ -68,7 +92,12 @@ HeapChunk_t* create_chunk(size_t size) {
         p_next_chunk->in_use = false;
         p_next_chunk->size = (size_t)((intptr_t)sbrk(0) - (intptr_t)get_chunk_data_ptr(p_next_chunk));
     } else {
-        // split chunk
+        // TODO: if not enough space for header give space to chunk 
+        p_next_chunk->next = p_chunk->next;
+        p_chunk->next->prev = p_next_chunk;
+        p_next_chunk->prev = p_chunk; 
+        p_next_chunk->in_use = false;
+        p_next_chunk->size = (size_t)((intptr_t)p_next_chunk->next - (intptr_t)p_next_chunk);
     }
     
     p_chunk->next = p_next_chunk;
@@ -95,14 +124,20 @@ HeapChunk_t* get_free_chunk(size_t size) {
     size_t inc_amount = inc_multiplier * HEAP_INC_STEP;
     void* old_end = sbrk(inc_amount);
     if (old_end == (void*)-1) {
-        fprintf(stderr, "FAILED TO ASK FOR MORE");
+        errno = ENOMEM;
+        return NULL;
     }
 
     if (cur->next == NULL) {
         cur->size += inc_amount;
     } else {
-        // last node is in use
-        // make a new header
+        // TODO: prob doesnt work 
+        HeapChunk_t* p_new_chunk = (HeapChunk_t*)old_end;
+        p_new_chunk->next = NULL;
+        p_new_chunk->prev = cur;
+        cur->next = p_new_chunk;
+        p_new_chunk->in_use = false;
+        p_new_chunk->size = inc_amount;
     }
     
     heap_info.avail_mem += inc_amount;
@@ -113,9 +148,7 @@ HeapChunk_t* get_free_chunk(size_t size) {
 void* get_chunk_data_ptr(HeapChunk_t* chunk) {
     intptr_t ptr = (intptr_t) chunk;
     ptr = make_div_16(ptr + CHUNK_HEADER_SIZE);
-    //fprintf(stderr, "chunk ptr at %x is div %d\n", ptr, IS_DIV_16(ptr));
-
-    return (void*) ptr;
+    return (void*)ptr;
 }
     
 
