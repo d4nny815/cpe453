@@ -5,7 +5,8 @@
 #define PRINT_BUF_SIZE (1500)
 
 
-int main(int argc, char** argv) {
+// int main(int argc, char** argv) {
+int main(void) {
 //    printf("size of heapinfo %ld, size of heapchunk %ld\n", 
 //            sizeof(struct HeapInfo_t), sizeof(struct HeapChunk_t));
     print_heap();
@@ -23,10 +24,10 @@ int main(int argc, char** argv) {
     
     print_heap();
 
-    p1 = mymalloc(PRINT_BUF_SIZE / 2);
-    fprintf(stderr, "p1 now at %p\n", p1);
+    // p1 = mymalloc(PRINT_BUF_SIZE / 2);
+    // fprintf(stderr, "p1 now at %p\n", p1);
 
-    print_heap();
+    // print_heap();
 
  //   plnprintf(stdout, "testing print");
 

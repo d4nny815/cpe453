@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -g 
+CFLAGS = -Wall -Werror -Wextra -g 
 NICO_LIB = ~pn-cs453/demos/lib 
 
 .PHONY: run clean
