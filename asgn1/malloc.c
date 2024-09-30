@@ -53,15 +53,14 @@ void myfree(void* ptr) {
     p_chunk->in_use = 0;
     heap_info.avail_mem += p_chunk->size;
 
-    // TODO: merge chunks around
-    
     if (p_chunk->next != NULL && !p_chunk->next->in_use) { // merge with block behind
         HeapChunk_t* p_chunk_behind = p_chunk->next;
         fprintf(stderr, "Merging %p with %p behind\n", p_chunk, p_chunk_behind);    
 
         p_chunk->next = p_chunk_behind->next;
-        p_chunk->size += p_chunk_behind->size + CHUNK_HEADER_SIZE; // FIXME
         p_chunk_behind->prev = p_chunk;
+        p_chunk->size += p_chunk_behind->size + CHUNK_HEADER_SIZE; // FIXME
+        heap_info.avail_mem += CHUNK_HEADER_SIZE;
     } 
     if (p_chunk->prev != NULL && !p_chunk->prev->in_use) { // merge with block infront
         HeapChunk_t* p_chunk_infront = p_chunk->prev;
@@ -69,11 +68,19 @@ void myfree(void* ptr) {
         p_chunk->next->prev = p_chunk_infront;
         p_chunk_infront->next = p_chunk->next;
         p_chunk_infront->size += p_chunk->size;
+        heap_info.avail_mem += CHUNK_HEADER_SIZE;
 
     }
 
-
     return;
+}
+
+void* mycalloc(size_t nmemb, size_t size) {
+    void* ptr = mymalloc(size);
+    if (ptr == NULL) {
+        return NULL;
+    }
+    return memset(ptr, nmemb, size);
 }
 
 

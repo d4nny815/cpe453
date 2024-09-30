@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <errno.h>
+#include <string.h>
 
 // #define HEAP_INC_AMOUNT     (1 << 16)
 #define HEAP_INC_STEP       (1 << 10)
