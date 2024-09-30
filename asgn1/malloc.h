@@ -41,7 +41,7 @@ int init_heap();
 HeapChunk_t* create_chunk(size_t size);
 void* get_chunk_data_ptr(HeapChunk_t* chunk);
 HeapChunk_t* get_free_chunk(size_t size);
-
+HeapChunk_t* get_pchunk_from_pdata(void* ptr);
 
 size_t make_div_16(size_t val);
 

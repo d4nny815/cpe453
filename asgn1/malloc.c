@@ -83,6 +83,30 @@ void* mycalloc(size_t nmemb, size_t size) {
     return memset(ptr, nmemb, size);
 }
 
+void* myrealloc(void* ptr, size_t size) {
+    HeapChunk_t* p_chunk = get_pchunk_from_pdata(ptr);
+    // FIXME: consider header size too
+    // FIXME: consider if there is not enough space for header
+    // TODO: test
+    if (!p_chunk->next->in_use && (p_chunk->next->size + p_chunk->size) < (size)) {
+        HeapChunk_t* p_next_chunk = p_chunk->next;
+        size_t space_needed = size - p_chunk->size;
+        p_chunk->size += space_needed;
+        HeapChunk_t* p_new_next_chunk = (HeapChunk_t*)((intptr_t)p_next_chunk + (intptr_t)space_needed);
+        p_new_next_chunk->next = p_next_chunk->next;
+        p_chunk->next = p_new_next_chunk;
+        p_new_next_chunk->prev = p_chunk;
+        p_new_next_chunk->size = p_chunk->size - space_needed;
+        p_new_next_chunk->in_use = false; 
+    } 
+    
+    
+    void* p_new = mymalloc(size);
+    memcpy(p_new, ptr, p_chunk->size);
+    myfree(ptr);
+    return p_new;
+}
+
 
 HeapChunk_t* create_chunk(size_t size) {
     HeapChunk_t* p_chunk = get_free_chunk(size);
@@ -158,6 +182,10 @@ void* get_chunk_data_ptr(HeapChunk_t* chunk) {
     return (void*)ptr;
 }
     
+
+HeapChunk_t* get_pchunk_from_pdata(void* ptr) {
+    return (HeapChunk_t*)((intptr_t)ptr - CHUNK_HEADER_SIZE);
+}
 
 void print_chunk(HeapChunk_t* chunk) {
     fprintf(stderr, 
