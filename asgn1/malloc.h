@@ -8,13 +8,11 @@
 #include <errno.h>
 #include <string.h>
 
-// #define HEAP_INC_AMOUNT     (1 << 16)
-#define HEAP_INC_STEP       (1 << 10)
-#define MASK_16             (~0xf)
+#define HEAP_INC_STEP     (1 << 16)
+//#define HEAP_INC_STEP       (1 << 10)
 #define CHUNK_HEADER_SIZE   (sizeof(struct HeapChunk_t))
-#define IS_DIV_16(x)        (!(x % 16))
-#define MAKE_DIV_16(x)      ((x + 16) & MASK_16)
 #define INIT_HEAP_PASSED    (0)
+#define HEAP_NOMEM_AVAIL    (1)
 
 
 struct HeapInfo_t {
@@ -22,6 +20,7 @@ struct HeapInfo_t {
   size_t avail_mem;
   bool exists;
 };
+
 
 typedef struct HeapChunk_t {
   struct HeapChunk_t* next;

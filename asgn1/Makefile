@@ -1,7 +1,7 @@
 C = gcc
 CFLAGS = -Wall -g -fPIC
 
-.PHONY: run clean
+#.PHONY: run clean
 
 all: intel-all malloc hello
 
