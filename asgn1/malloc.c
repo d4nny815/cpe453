@@ -3,6 +3,8 @@
 // TODO: fix assumption that header is 32B
 
 static struct HeapInfo_t heap_info;
+#define BUF_LEN (1500)
+static char buf[BUF_LEN];
 
 int init_heap() {
     intptr_t p_cur_end = (intptr_t)sbrk(0);
@@ -26,7 +28,9 @@ int init_heap() {
 }
 
 
-void* mymalloc(size_t size) {
+void* malloc(size_t size) {
+    snprintf(buf, BUF_LEN, "my malloc being called");
+    puts(buf);
     if (!heap_info.exists) {
         if(init_heap() != INIT_HEAP_PASSED) {
             return NULL;
@@ -38,7 +42,7 @@ void* mymalloc(size_t size) {
 }
 
 
-void myfree(void* ptr) {
+void free(void* ptr) {
     // fprintf(stderr, "[FREE] %p\n", ptr);
     HeapChunk_t* p_chunk = heap_info.p_start;
     while ((intptr_t)p_chunk->next < (intptr_t)ptr) {
@@ -46,7 +50,7 @@ void myfree(void* ptr) {
     }
 
     if (p_chunk == NULL) {
-        fprintf(stderr, "[FREE] not a valid ptr");
+        //fprintf(stderr, "[FREE] not a valid ptr");
         return;
     }
 
@@ -55,7 +59,7 @@ void myfree(void* ptr) {
 
     if (p_chunk->next != NULL && !p_chunk->next->in_use) { // merge with block behind
         HeapChunk_t* p_chunk_behind = p_chunk->next;
-        fprintf(stderr, "Merging %p with %p behind\n", p_chunk, p_chunk_behind);    
+        //fprintf(stderr, "Merging %p with %p behind\n", p_chunk, p_chunk_behind);    
 
         p_chunk->next = p_chunk_behind->next;
         p_chunk_behind->prev = p_chunk;
@@ -64,7 +68,7 @@ void myfree(void* ptr) {
     } 
     if (p_chunk->prev != NULL && !p_chunk->prev->in_use) { // merge with block infront
         HeapChunk_t* p_chunk_infront = p_chunk->prev;
-        fprintf(stderr, "Merging %p with %p infront\n", p_chunk_infront, p_chunk);    
+        //fprintf(stderr, "Merging %p with %p infront\n", p_chunk_infront, p_chunk);    
         p_chunk->next->prev = p_chunk_infront;
         p_chunk_infront->next = p_chunk->next;
         p_chunk_infront->size += p_chunk->size;
@@ -75,15 +79,15 @@ void myfree(void* ptr) {
     return;
 }
 
-void* mycalloc(size_t nmemb, size_t size) {
-    void* ptr = mymalloc(size);
+void* calloc(size_t nmemb, size_t size) {
+    void* ptr = malloc(size);
     if (ptr == NULL) {
         return NULL;
     }
     return memset(ptr, nmemb, size);
 }
 
-void* myrealloc(void* ptr, size_t size) {
+void* realloc(void* ptr, size_t size) {
     HeapChunk_t* p_chunk = get_pchunk_from_pdata(ptr);
     // FIXME: consider header size too
     // FIXME: consider if there is not enough space for header
@@ -101,9 +105,9 @@ void* myrealloc(void* ptr, size_t size) {
     } 
     
     
-    void* p_new = mymalloc(size);
+    void* p_new = malloc(size);
     memcpy(p_new, ptr, p_chunk->size);
-    myfree(ptr);
+    free(ptr);
     return p_new;
 }
 
@@ -188,26 +192,28 @@ HeapChunk_t* get_pchunk_from_pdata(void* ptr) {
 }
 
 void print_chunk(HeapChunk_t* chunk) {
-    fprintf(stderr, 
-            "chunk info - p_start %p next: %p prev: %p in_use: %d size: %ld p_data: %p\n", 
+    snprintf(buf, BUF_LEN, "chunk info - p_start %p next: %p prev: %p"
+            "in_use: %d size: %zu p_data: %p\n", 
             chunk, chunk->next, chunk->prev, chunk->in_use, chunk->size, 
             get_chunk_data_ptr(chunk));
     return;
 }
 
 void print_heap() {
+    snprintf(buf, BUF_LEN, "printing heap");
     if (!heap_info.exists) {
         init_heap();
     }
 
     HeapChunk_t* cur = heap_info.p_start;
     void* end = sbrk(0);
-    fprintf(stderr, "\n[HEAP]\nstart: %p avail_mem %lu end %p\n", heap_info.p_start, heap_info.avail_mem, end);
+    snprintf(buf, BUF_LEN, "\n[HEAP]\nstart: %p avail_mem %zu end %p\n", 
+            heap_info.p_start, heap_info.avail_mem, end);
     while (cur != NULL) {
         print_chunk(cur);
         cur = cur->next;
     }
-    fprintf(stderr, "[END HEAP]\n\n");
+    snprintf(buf, BUF_LEN, "[END HEAP]\n\n");
 }
 
 

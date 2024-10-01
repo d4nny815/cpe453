@@ -1,6 +1,18 @@
-CC = gcc
+C = gcc
 CFLAGS = -Wall -g -fPIC
-NICO_LIB = ~pn-cs453/demos/lib 
+
+.PHONY: run clean
+
+all: intel-all malloc hello
+
+libmalloc.so: malloc.o
+	$(CC) $(CFLAGS) -shared -o libmalloc.so malloc.o
+
+malloc.o: malloc.c intel-all
+	$(CC) $(CFLAGS) -c malloc.c
+
+malloc: libmalloc.so
+	@echo "Libraries built."
 
 
 intel-all: lib/libmalloc.so lib64/libmalloc.so
@@ -10,8 +22,8 @@ lib/libmalloc.so: lib malloc32.o
 
 lib64/libmalloc.so: lib64 malloc64.o
 	$(CC) $(CFLAGS) -shared -o $@ malloc64.o
-
-lib: 
+						    
+lib:
 	mkdir lib
 
 lib64:
@@ -23,5 +35,15 @@ malloc32.o: malloc.c
 malloc64.o: malloc.c
 	$(CC) $(CFLAGS) -m64 -c -o malloc64.o malloc.c
 
+hello: hello.o libmalloc.so 
+	$(CC) -L./lib64 -o hello hello.o -lmalloc
+	
+hello.o: hello.c
+	$(CC) -Wall -g -c -o hello.o hello.c
+
+run: hello
+	./hello
+
 clean:
-	rm -f malloc.o *~ TAGS
+	rm -rf *.o *.a *.so hello lib lib64
+
