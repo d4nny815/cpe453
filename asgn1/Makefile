@@ -3,7 +3,7 @@ CFLAGS = -Wall -g -fPIC
 
 #.PHONY: run clean
 
-all: intel-all malloc hello
+all: intel-all malloc main
 
 libmalloc.a: malloc.o
 	ar rcs libmalloc.a malloc.o
@@ -38,24 +38,17 @@ malloc32.o: malloc.c
 malloc64.o: malloc.c
 	$(CC) $(CFLAGS) -m64 -c -o malloc64.o malloc.c
 
-main: main.o libmalloc.so
+main: main.o libmalloc.so 
 	$(CC) -g -L./lib64 -o main main.o -lmalloc
+	
+main.o: main.c
+	$(CC) -Wall -g -c -o main.o main.c
+
+run: main
 	./main
 
-main.o: main.c
-	$(CC) -Wall -g -c -o main.o main.c	
-
-hello: hello.o libmalloc.so 
-	$(CC) -g -L./lib64 -o hello hello.o -lmalloc
-	
-hello.o: hello.c
-	$(CC) -Wall -g -c -o hello.o hello.c
-
-run: hello
-	./hello
-
 clean:
-	rm -rf *.o *.a *.so hello lib lib64
+	rm -rf *.o *.a *.so main lib lib64
 
 core_clean:
 	rm -rf core.*
