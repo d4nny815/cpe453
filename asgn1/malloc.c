@@ -42,9 +42,9 @@ void* malloc(size_t size) {
         return NULL;
     }
     split_chunk(p_chunk, size);
-    snprintf(buf, BUF_LEN, "[MALLOC] ");
-    write(1, buf, strlen(buf));
-    print_chunk(p_chunk);
+    //snprintf(buf, BUF_LEN, "[MALLOC] ");
+    //write(1, buf, strlen(buf));
+    //print_chunk(p_chunk);
     return get_chunk_data_ptr(p_chunk);
 }
 
@@ -53,16 +53,16 @@ void free(void* ptr) {
     if (ptr == NULL) {
         return;
     }
-    snprintf(buf, BUF_LEN, "[FREE] %p\n", ptr);
-    write(STDERR, buf, len);
+    //snprintf(buf, BUF_LEN, "[FREE] %p\n", ptr);
+    //write(STDERR, buf, len);
     HeapChunk_t* p_chunk = heap_info.p_start;
     while ((intptr_t)p_chunk->next < (intptr_t)ptr) {
         p_chunk = p_chunk->next;
     }
 
     if (p_chunk == NULL) {
-        snprintf(buf, BUF_LEN, "[FREE] not a valid ptr\n");
-        write(STDERR, buf, len);
+        //snprintf(buf, BUF_LEN, "[FREE] not a valid ptr\n");
+        //write(STDERR, buf, len);
         return;
     }
 
