@@ -5,7 +5,6 @@ static struct HeapInfo_t heap_info;
 #define len     (strlen(buf))
 static char buf[BUF_LEN];
 
-
 int init_heap() {
     // start heap at addr div by 16
     intptr_t p_cur_end = (intptr_t)sbrk(0);
@@ -42,9 +41,11 @@ void* malloc(size_t size) {
         return NULL;
     }
     split_chunk(p_chunk, size);
-    //snprintf(buf, BUF_LEN, "[MALLOC] ");
-    //write(1, buf, strlen(buf));
-    //print_chunk(p_chunk);
+    #ifdef DEBUG_MALLOC
+        snprintf(buf, BUF_LEN, "[MALLOC] ");
+        write(STDERR, buf, len);
+        print_chunk(p_chunk);
+    #endif
     return get_chunk_data_ptr(p_chunk);
 }
 
@@ -53,16 +54,20 @@ void free(void* ptr) {
     if (ptr == NULL) {
         return;
     }
-    //snprintf(buf, BUF_LEN, "[FREE] %p\n", ptr);
-    //write(STDERR, buf, len);
+    #ifdef DEBUG_MALLOC
+        snprintf(buf, BUF_LEN, "[FREE] %p\n", ptr);
+        write(STDERR, buf, len);
+    #endif
     HeapChunk_t* p_chunk = heap_info.p_start;
     while ((intptr_t)p_chunk->next < (intptr_t)ptr) {
         p_chunk = p_chunk->next;
     }
 
     if (p_chunk == NULL) {
-        //snprintf(buf, BUF_LEN, "[FREE] not a valid ptr\n");
-        //write(STDERR, buf, len);
+        #ifdef DEBUG_MALLOC
+            snprintf(buf, BUF_LEN, "[FREE] not a valid ptr\n");
+            write(STDERR, buf, len);
+        #endif
         return;
     }
 
@@ -72,8 +77,11 @@ void free(void* ptr) {
     // merge with block behind
     if (p_chunk->next != NULL && !p_chunk->next->in_use) { 
         HeapChunk_t* p_chunk_behind = p_chunk->next;
-        //fprintf(stderr, "Merging %p with %p behind\n", 
-        //          p_chunk, p_chunk_behind);    
+        #ifdef DEBUG_MALLOC
+            snprintf(buf, BUF_LEN, "Merging %p with %p behind\n", 
+                     p_chunk, p_chunk_behind);
+            write(STDERR, buf, len);    
+        #endif
 
         p_chunk->next = p_chunk_behind->next;
         p_chunk_behind->prev = p_chunk;
@@ -83,8 +91,11 @@ void free(void* ptr) {
     // merge with block infront
     if (p_chunk->prev != NULL && !p_chunk->prev->in_use) { 
         HeapChunk_t* p_chunk_infront = p_chunk->prev;
-        //fprintf(stderr, "Merging %p with %p infront\n", 
-        //        p_chunk_infront, p_chunk);    
+        #ifdef DEBUG_MALLOC
+            snprintf(buf, BUF_LEN, "Merging %p with %p infront\n", 
+                   p_chunk_infront, p_chunk);
+            write(STDERR, buf, len);    
+        #endif
         p_chunk->next->prev = p_chunk_infront;
         p_chunk_infront->next = p_chunk->next;
         p_chunk_infront->size += p_chunk->size;
@@ -115,19 +126,25 @@ void* realloc(void* ptr, size_t size) {
     }
     // TODO: check if ptr is in the heap
     HeapChunk_t* p_chunk = get_pchunk_from_pdata(ptr);
+    #ifdef DEBUG_MALLOC
+#endif
     //print_chunk(p_chunk);
     //print_chunk(p_chunk->next);
     size_t cur_size_and_next = (CHUNK_HEADER_SIZE + p_chunk->size +
                                 p_chunk->next->size);
-    //snprintf(buf, BUF_LEN, "[REALLOC] req %zu combined size %zu chunk_size"
-    //        " %zu next_chunk_size %zu\n", size, cur_size_and_next, 
-    //         p_chunk->size, p_chunk->next->size);
-    //write(STDERR, buf, len);
+    #ifdef DEBUG_MALLOC
+        snprintf(buf, BUF_LEN, "[REALLOC] req %zu combined size %zu chunk_size"
+               " %zu next_chunk_size %zu\n", size, cur_size_and_next, 
+                p_chunk->size, p_chunk->next->size);
+        write(STDERR, buf, len);
+    #endif
     if (size < p_chunk->size) {
         //print_chunk(p_chunk);
-        //snprintf(buf, BUF_LEN, "[REALLOC] shrinking %zu down to %zu\n", 
-        //       p_chunk->size, size);
-        //write(STDERR, buf, len);
+        #ifdef DEBUG_MALLOC
+            snprintf(buf, BUF_LEN, "[REALLOC] shrinking %zu down to %zu\n", 
+                  p_chunk->size, size);
+            write(STDERR, buf, len);
+        #endif
         split_chunk(p_chunk, size);
         //print_chunk(p_chunk);
         //print_chunk(p_chunk->next);
@@ -135,8 +152,10 @@ void* realloc(void* ptr, size_t size) {
     }
     // TODO: add case for more mem
     else if (!p_chunk->next->in_use && size < cur_size_and_next){
-        //snprintf(buf, BUF_LEN, "[REALLOC] realloc shouldnt move buffer\n");
-        //write(STDERR, buf, len);
+        #ifdef DEBUG_MALLOC
+            snprintf(buf, BUF_LEN, "[REALLOC] realloc shouldnt move buffer\n");
+            write(STDERR, buf, len);
+        #endif
         // TODO: if chunk is at end of heap
         // TODO: if next next chunk is NULL
         // There exist 2 chunks after user chunk
@@ -164,9 +183,11 @@ HeapChunk_t* get_free_chunk(size_t size) {
         if (!cur->in_use && cur->size > (size + MIN_CHUNK_SPACE) &&
             make_div_16((intptr_t) cur + size + MIN_CHUNK_SPACE) < 
             end_addr) {
-            //snprintf(buf, BUF_LEN, "[GET_FREE_CHUNK] free chunk at %p"
-            //        " for size %zu\n", cur, size);
-            //write(STDERR, buf, len);
+            #ifdef DEBUG_MALLOC
+                snprintf(buf, BUF_LEN, "[GET_FREE_CHUNK] free chunk at %p"
+                       " for size %zu\n", cur, size);
+                write(STDERR, buf, len);
+            #endif
             return cur;
         }
     } while (cur->next && (cur = cur->next));
@@ -175,8 +196,10 @@ HeapChunk_t* get_free_chunk(size_t size) {
         cur = heap_info.p_start;
     }
     
-    //snprintf(buf, BUF_LEN, "[GET_FREE_CHUNK] asking for more mem\n");
-    //write(STDERR, buf, len);
+    #ifdef DEBUG_MALLOC
+        snprintf(buf, BUF_LEN, "[GET_FREE_CHUNK] asking for more mem\n");
+        write(STDERR, buf, len);
+    #endif
 
     size_t inc_multiplier = size / HEAP_INC_STEP + 1;
     size_t inc_amount = inc_multiplier * HEAP_INC_STEP;
@@ -189,15 +212,19 @@ HeapChunk_t* get_free_chunk(size_t size) {
     // added more space to end of heap
     if (cur->next == NULL) {
         cur->size += inc_amount;
-        //snprintf(buf, BUF_LEN, "[GET_FREE_CHUNK] adding more"
-        //        " space to end of heap\n");
-        //write(STDERR, buf, len);
+        #ifdef DEBUG_MALLOC
+            snprintf(buf, BUF_LEN, "[GET_FREE_CHUNK] adding more"
+                   " space to end of heap\n");
+            write(STDERR, buf, len);
+        #endif
     } 
     // create a new free chunk at the end of the heap for user
     else {
-        //snprintf(buf, BUF_LEN, "[GET_FREE_CHUNK] creating a new "
-        //        " chunk at end of heap\n");
-        //write(STDERR, buf, len);
+        #ifdef DEBUG_MALLOC
+            snprintf(buf, BUF_LEN, "[GET_FREE_CHUNK] creating a new "
+                   " chunk at end of heap\n");
+            write(STDERR, buf, len);
+        #endif
         HeapChunk_t* p_new_chunk = (HeapChunk_t*)old_end;
         p_new_chunk->next = NULL;
         p_new_chunk->prev = cur;
@@ -219,12 +246,16 @@ void split_chunk(HeapChunk_t* chunk, size_t size) {
     HeapChunk_t* p_new_chunk = (HeapChunk_t*) new_chunk_addr; 
     HeapChunk_t* p_next_chunk = (HeapChunk_t*) next_chunk_addr;
     size_t chunk_size = new_chunk_addr - chunk_addr - CHUNK_HEADER_SIZE;
-    //snprintf(buf, BUF_LEN, "[SPLIT_CHUNK] chunk size %p %p header size:"
-    //    " %zu %zu\n", p_new_chunk, chunk, CHUNK_HEADER_SIZE, chunk_size);
-    //write(STDERR, buf, len);
+    #ifdef DEBUG_MALLOC
+        snprintf(buf, BUF_LEN, "[SPLIT_CHUNK] chunk size %p %p header size:"
+           " %zu %zu\n", p_new_chunk, chunk, CHUNK_HEADER_SIZE, chunk_size);
+        write(STDERR, buf, len);
+    #endif
     if (chunk->next == NULL) {
-        //snprintf(buf, BUF_LEN, "[SPLIT_CHUNK] adding to end of heap\n");
-        //write(STDERR, buf, len);
+        #ifdef DEBUG_MALLOC
+            snprintf(buf, BUF_LEN, "[SPLIT_CHUNK] adding to end of heap\n");
+            write(STDERR, buf, len);
+        #endif
         p_new_chunk->next = NULL;
         p_new_chunk->prev = chunk;
         p_new_chunk->size = (intptr_t) sbrk(0) - new_chunk_addr + 
@@ -238,9 +269,11 @@ void split_chunk(HeapChunk_t* chunk, size_t size) {
     
     if (next_chunk_addr - new_chunk_addr > 
         size + MIN_CHUNK_SPACE) {
-        //snprintf(buf, BUF_LEN, "[SPLIT_CHUNK] sandwiched with "
-        //        " room req: %zu\n", size);
-        //write(STDERR, buf, len);
+        #ifdef DEBUG_MALLOC
+            snprintf(buf, BUF_LEN, "[SPLIT_CHUNK] sandwiched with "
+                   " room req: %zu\n", size);
+            write(STDERR, buf, len);
+        #endif
         
         p_new_chunk->next = p_next_chunk;
         chunk->next = p_new_chunk;
@@ -253,8 +286,10 @@ void split_chunk(HeapChunk_t* chunk, size_t size) {
         chunk->in_use = true;
         return;
     }
-    //snprintf(buf, BUF_LEN, "[SPLIT_CHUNK] sandwiched with no room\n");
-    //write(STDERR, buf, len);
+    #ifdef DEBUG_MALLOC
+        snprintf(buf, BUF_LEN, "[SPLIT_CHUNK] sandwiched with no room\n");
+        write(STDERR, buf, len);
+    #endif
     return;
 }
 
