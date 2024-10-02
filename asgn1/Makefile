@@ -5,6 +5,9 @@ CFLAGS = -Wall -g -fPIC
 
 all: intel-all malloc hello
 
+libmalloc.a: malloc.o
+	ar rcs libmalloc.a malloc.o
+
 libmalloc.so: malloc.o
 	$(CC) $(CFLAGS) -shared -o libmalloc.so malloc.o
 

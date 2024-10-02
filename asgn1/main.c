@@ -2,43 +2,29 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <lib.h>
 
+/* allocate three buffers, then shrink the middle one.  It is not expected
+ * to move */
 
-#define HOWMANY 5
 int main(int argc, char *argv[]){
-  unsigned char *val[HOWMANY];
-  int size[HOWMANY];
-  int i;
+  unsigned char *one, *two, *three,*new;
 
-  for(i=0;i<HOWMANY;i++ ) {
-    size[i] = (i+1) * 500;  /* to avoid freeing NULL */
+  one = getbuff(2048);          /* allocate and fill buffers */
+  two = getbuff(2048);
+  three = getbuff(2048);
 
-    printf("Allocating a region of size %d...", (int)size[i]);
-    val[i] = malloc (size[i]);
-    if ( !val[i] && size[i] )
-      printf("FAILED.\n");
-    else {
-      fill(val[i],size[i],i);
-      if ( !check(val[i],size[i],i) )
-        printf("ok.\n");
-      else
-        printf("FAILED.\n");
-    }
+  new = realloc(two,1024);
+  if ( new != two ) {
+    printf("Realloc unexpectedly moved the buffer old %p != new %p.\n",two,new);
   }
 
-  for(i=0;i<HOWMANY;i++ ) {
-    int j;
-    free(val[i]);
-    /* check the rest...*/
-    printf("Free ok. Checking remaining regions...(");
-    for(j=i+1;j<HOWMANY;j++) {
-      if ( !check(val[j],size[i],j) )
-        printf("ok.");
-      else
-        printf("FAILED.");
-    }
-    printf(")\n");
-  }
+  if ( check(new,1024,0) )
+    printf("Some values were not properly copied.\n");
+  if ( check(one,2048,0) )
+    printf("Values in buffer one were disturbed\n");
+  if ( check(three,2048,0) )
+    printf("Values in buffer three were disturbed\n");
 
   exit(0);
 }

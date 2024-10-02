@@ -108,12 +108,26 @@ void* realloc(void* ptr, size_t size) {
         return malloc(size);
     
     }
+
+    if (size == 0) {
+        free(ptr);
+        return NULL;
+    }
+
     HeapChunk_t* p_chunk = get_pchunk_from_pdata(ptr);
-    // FIXME: consider header size too
-    // FIXME: consider if there is not enough space for header
-    // TODO: realloc on NULL with a size
-    // TODO: test
-    if (!p_chunk->next->in_use && 
+    // TODO: realloc that shrinks
+    if (size < p_chunk->size) {
+        //print_chunk(p_chunk);
+        //snprintf(buf, BUF_LEN, "[REALLOC] shrinking %zu down to %zu\n", 
+        //       p_chunk->size, size);
+        //write(STDERR, buf, len);
+        split_chunk(p_chunk, size);
+        //print_chunk(p_chunk);
+        //print_chunk(p_chunk->next);
+        return get_chunk_data_ptr(p_chunk);
+    }
+    // TODO: realloc that shouldnt move buffer
+    else if (!p_chunk->next->in_use && 
         (p_chunk->next->size + p_chunk->size) < (size)) {
         HeapChunk_t* p_next_chunk = p_chunk->next;
         size_t space_needed = size - p_chunk->size;
@@ -190,13 +204,12 @@ HeapChunk_t* get_free_chunk(size_t size) {
 
 void split_chunk(HeapChunk_t* chunk, size_t size) {
     intptr_t chunk_addr = (intptr_t) chunk;
-    intptr_t new_chunk_addr = (intptr_t) make_div_16(CHUNK_HEADER_SIZE + 
+    intptr_t new_chunk_addr = (intptr_t) GET_DIV16_ADDR(CHUNK_HEADER_SIZE + 
                                                     chunk_addr + size);
     intptr_t next_chunk_addr = (intptr_t) chunk->next;
 
     HeapChunk_t* p_new_chunk = (HeapChunk_t*) new_chunk_addr; 
     HeapChunk_t* p_next_chunk = (HeapChunk_t*) next_chunk_addr;
-    void* p_end = sbrk(0);
     size_t chunk_size = new_chunk_addr - chunk_addr - CHUNK_HEADER_SIZE;
     //snprintf(buf, BUF_LEN, "[SPLIT_CHUNK] chunk size %p %p header size:"
     //    " %zu %zu\n", p_new_chunk, chunk, CHUNK_HEADER_SIZE, chunk_size);
