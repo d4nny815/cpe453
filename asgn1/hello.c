@@ -8,8 +8,15 @@ static char buf[PRINT_BUF_SIZE];
 // int main(int argc, char** argv) {
 int main(void) {
     print_heap();
-
     char *p1, *p2, *p3, *p4;
+    int i;
+    for (i = 0; i < 10; i++) {
+        p1 = malloc(500);
+        snprintf(buf, PRINT_BUF_SIZE, "%p", p1);
+        puts(buf);
+    }
+    print_heap();
+    /*
     p1 = (char*) malloc(PRINT_BUF_SIZE);
     p2 = (char*) malloc(2 * PRINT_BUF_SIZE);
     p3 = (char*) malloc(PRINT_BUF_SIZE / 2);
@@ -36,6 +43,8 @@ int main(void) {
     free(p4);
     fprintf(stderr, "free p4\n");
     print_heap();
+    */
 
   return 0;
 }
+

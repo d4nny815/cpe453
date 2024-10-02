@@ -8,12 +8,13 @@
 #include <errno.h>
 #include <string.h>
 
-#define HEAP_INC_STEP     (1 << 16)
 //#define HEAP_INC_STEP       (1 << 10)
+#define HEAP_INC_STEP     (1 << 16)
 #define CHUNK_HEADER_SIZE   (sizeof(struct HeapChunk_t))
 #define INIT_HEAP_PASSED    (0)
-#define HEAP_NOMEM_AVAIL    (1)
-
+#define HEAP_NOMEM_AVAIL    (16)
+#define MIN_CHUNK_SPACE     (16 + CHUNK_HEADER_SIZE)
+#define GET_DIV16_ADDR(x)   ((x + 15) & ~0xf)
 
 struct HeapInfo_t {
   struct HeapChunk_t* p_start;
@@ -37,11 +38,13 @@ void free(void* ptr);
 
 int init_heap();
 
-HeapChunk_t* create_chunk(size_t size);
-void* get_chunk_data_ptr(HeapChunk_t* chunk);
 HeapChunk_t* get_free_chunk(size_t size);
-HeapChunk_t* get_pchunk_from_pdata(void* ptr);
+void split_chunk(HeapChunk_t* chunk, size_t size);
 
+HeapChunk_t* get_pchunk_from_pdata(void* ptr);
+void* get_chunk_data_ptr(HeapChunk_t* chunk);
+
+bool space_for_another_chunk(HeapChunk_t* chunk, size_t size);
 size_t make_div_16(size_t val);
 
 void print_heap();

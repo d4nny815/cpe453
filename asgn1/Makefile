@@ -36,7 +36,7 @@ malloc64.o: malloc.c
 	$(CC) $(CFLAGS) -m64 -c -o malloc64.o malloc.c
 
 hello: hello.o libmalloc.so 
-	$(CC) -L./lib64 -o hello hello.o -lmalloc
+	$(CC) -g -L./lib64 -o hello hello.o -lmalloc
 	
 hello.o: hello.c
 	$(CC) -Wall -g -c -o hello.o hello.c
@@ -47,3 +47,8 @@ run: hello
 clean:
 	rm -rf *.o *.a *.so hello lib lib64
 
+core_clean:
+	rm -rf core.*
+
+test:
+	~pn-cs453/demos/tryAsgn1 > test.log
