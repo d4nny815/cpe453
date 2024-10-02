@@ -8,6 +8,7 @@ static char buf[PRINT_BUF_SIZE];
 int main(void) {
     print_heap();
     char *p1, *p2, *p3, *p4;
+    /*
     int i;
     for (i = 0; i < 8192; i++) {
         size_t size = i;
@@ -20,17 +21,17 @@ int main(void) {
     }
     
     print_heap();
-    /*
-    //p1 = (char*) malloc(PRINT_BUF_SIZE);
-    p1 = malloc(1024);
+    */
+    p1 = (char*) malloc(PRINT_BUF_SIZE);
+    //p1 = malloc(1024);
     p2 = (char*) malloc(2 * PRINT_BUF_SIZE);
     p3 = (char*) malloc(PRINT_BUF_SIZE / 2);
     p4 = (char*) malloc(PRINT_BUF_SIZE / 10);
-    snprintf(buf, PRINT_BUF_SIZE, "p1: %p, p2: %p, p3: %p, p4:%p", 
+    snprintf(buf, PRINT_BUF_SIZE, "p1: %p, p2: %p, p3: %p, p4:%p\n", 
             p1, p2, p3, p4);
-    puts(buf);
+    write(STDERR_FILENO, buf, strlen(buf));
     print_heap();
-
+    /*
     free(p1);
     free(p3);
     fprintf(stderr, "free p1 and p3\n");

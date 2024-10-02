@@ -7,6 +7,7 @@
 #include <stdbool.h>
 #include <errno.h>
 #include <string.h>
+#include <stdlib.h>
 
 #define HEAP_INC_STEP       (1 << 16)
 #define INIT_HEAP_PASSED    (0)
@@ -38,24 +39,25 @@ void* realloc(void* ptr, size_t size);
 void* calloc(size_t nmemb, size_t size);
 void free(void* ptr);
 
-static int init_heap();
+int init_heap();
 
-static HeapChunk_t* get_free_chunk(size_t size);
-static int ask_more_mem(size_t req_amt);
-static void split_chunk(HeapChunk_t* chunk, size_t size);
+HeapChunk_t* get_free_chunk(size_t size);
+int ask_more_mem(size_t req_amt);
+void split_chunk(HeapChunk_t* chunk, size_t size);
+bool space_for_another_chunk(HeapChunk_t* chunk, size_t req_size);
 
-static intptr_t get_chunk_data_ptr(HeapChunk_t* chunk);
+intptr_t get_chunk_data_ptr(HeapChunk_t* chunk);
 
-static size_t calc_user_chunk_size(HeapChunk_t* chunk);
-static size_t calc_tot_chunk_size(HeapChunk_t* chunk);
-static intptr_t get_chunk_addr(HeapChunk_t* chunk);
-static intptr_t get_chunk_data_addr(HeapChunk_t* chunk);
-static intptr_t get_chunk_end_addr(HeapChunk_t* chunk);
+size_t calc_user_chunk_size(HeapChunk_t* chunk);
+size_t calc_tot_chunk_size(HeapChunk_t* chunk);
+intptr_t get_chunk_addr(HeapChunk_t* chunk);
+intptr_t get_chunk_data_addr(HeapChunk_t* chunk);
+intptr_t get_chunk_end_addr(HeapChunk_t* chunk);
 
 
 
-static void print_heap();
-static void print_chunk(HeapChunk_t* chunk);
+void print_heap();
+void print_chunk(HeapChunk_t* chunk);
 
 
 #endif /* LIBMALLOC_H */

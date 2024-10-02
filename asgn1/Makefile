@@ -41,7 +41,7 @@ malloc64.o: malloc.c
 
 
 # MY STUFF
-main: main.o libmalloc.so 
+main: main.o malloc
 	$(CC) -g -L./lib64 -o main main.o -lmalloc
 	
 main.o: main.c
@@ -49,6 +49,9 @@ main.o: main.c
 
 run: main
 	./main
+
+gdb: main
+	gdb ./main
 
 clean:
 	rm -rf *.o *.a *.so main lib lib64
