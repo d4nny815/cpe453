@@ -113,9 +113,16 @@ void* realloc(void* ptr, size_t size) {
         free(ptr);
         return NULL;
     }
-
+    // TODO: check if ptr is in the heap
     HeapChunk_t* p_chunk = get_pchunk_from_pdata(ptr);
-    // TODO: realloc that shrinks
+    //print_chunk(p_chunk);
+    //print_chunk(p_chunk->next);
+    size_t cur_size_and_next = (CHUNK_HEADER_SIZE + p_chunk->size +
+                                p_chunk->next->size);
+    //snprintf(buf, BUF_LEN, "[REALLOC] req %zu combined size %zu chunk_size"
+    //        " %zu next_chunk_size %zu\n", size, cur_size_and_next, 
+    //         p_chunk->size, p_chunk->next->size);
+    //write(STDERR, buf, len);
     if (size < p_chunk->size) {
         //print_chunk(p_chunk);
         //snprintf(buf, BUF_LEN, "[REALLOC] shrinking %zu down to %zu\n", 
@@ -126,19 +133,20 @@ void* realloc(void* ptr, size_t size) {
         //print_chunk(p_chunk->next);
         return get_chunk_data_ptr(p_chunk);
     }
-    // TODO: realloc that shouldnt move buffer
-    else if (!p_chunk->next->in_use && 
-        (p_chunk->next->size + p_chunk->size) < (size)) {
-        HeapChunk_t* p_next_chunk = p_chunk->next;
-        size_t space_needed = size - p_chunk->size;
-        p_chunk->size += space_needed;
-        HeapChunk_t* p_new_next_chunk = (HeapChunk_t*)\
-                    ((intptr_t)p_next_chunk + (intptr_t)space_needed);
-        p_new_next_chunk->next = p_next_chunk->next;
-        p_chunk->next = p_new_next_chunk;
-        p_new_next_chunk->prev = p_chunk;
-        p_new_next_chunk->size = p_chunk->size - space_needed;
-        p_new_next_chunk->in_use = false; 
+    // TODO: add case for more mem
+    else if (!p_chunk->next->in_use && size < cur_size_and_next){
+        //snprintf(buf, BUF_LEN, "[REALLOC] realloc shouldnt move buffer\n");
+        //write(STDERR, buf, len);
+        // TODO: if chunk is at end of heap
+        // TODO: if next next chunk is NULL
+        // There exist 2 chunks after user chunk
+        if (p_chunk->next != NULL && p_chunk->next->next != NULL) {
+            p_chunk->next = p_chunk->next->next;
+            p_chunk->next->next->prev = p_chunk;
+        }
+        // FIXME: do I need to update size
+        split_chunk(p_chunk, size);
+        return get_chunk_data_ptr(p_chunk);
     } 
     
     
