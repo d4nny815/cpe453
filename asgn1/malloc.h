@@ -15,6 +15,8 @@
 #define HEAP_NOMEM_AVAIL    (16)
 #define MIN_CHUNK_SPACE     (16 + CHUNK_HEADER_SIZE)
 #define GET_DIV16_ADDR(x)   ((x + 15) & ~0xf)
+#define STDERR              (2)
+
 
 struct HeapInfo_t {
   struct HeapChunk_t* p_start;
@@ -24,9 +26,9 @@ struct HeapInfo_t {
 
 
 typedef struct HeapChunk_t {
+  bool in_use;
   struct HeapChunk_t* next;
   struct HeapChunk_t* prev;
-  bool in_use;
   size_t size;
 } HeapChunk_t;
 

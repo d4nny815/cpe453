@@ -2,7 +2,9 @@
 
 static struct HeapInfo_t heap_info;
 #define BUF_LEN (1500)
+#define len     (strlen(buf))
 static char buf[BUF_LEN];
+
 
 int init_heap() {
     // start heap at addr div by 16
@@ -23,7 +25,6 @@ int init_heap() {
     heap_info.p_start->in_use = false;
     heap_info.p_start->size = HEAP_INC_STEP - CHUNK_HEADER_SIZE;
 
-    //print_chunk(heap_info.p_start);
     return INIT_HEAP_PASSED;
 }
 
@@ -31,8 +32,8 @@ int init_heap() {
 void* malloc(size_t size) {
     if (!heap_info.exists) {
         if(init_heap() != INIT_HEAP_PASSED) {
-            snprintf(buf, BUF_LEN, "[MALLOC] couldn't create mem");
-            puts(buf);
+            snprintf(buf, BUF_LEN, "[MALLOC] couldn't create mem\n");
+            write(STDERR, buf, len);
             return NULL;
         }
     }
@@ -52,14 +53,16 @@ void free(void* ptr) {
     if (ptr == NULL) {
         return;
     }
-    // fprintf(stderr, "[FREE] %p\n", ptr);
+    snprintf(buf, BUF_LEN, "[FREE] %p\n", ptr);
+    write(STDERR, buf, len);
     HeapChunk_t* p_chunk = heap_info.p_start;
     while ((intptr_t)p_chunk->next < (intptr_t)ptr) {
         p_chunk = p_chunk->next;
     }
 
     if (p_chunk == NULL) {
-        //fprintf(stderr, "[FREE] not a valid ptr");
+        snprintf(buf, BUF_LEN, "[FREE] not a valid ptr\n");
+        write(STDERR, buf, len);
         return;
     }
 
@@ -136,9 +139,9 @@ HeapChunk_t* get_free_chunk(size_t size) {
     HeapChunk_t* cur = heap_info.p_start;
     do {
         if (!cur->in_use && cur->size > (size + MIN_CHUNK_SPACE)) {
-            //snprintf(buf, BUF_LEN, "[GET_FREE_CHUNK] free chunk at %p", 
-            //         cur);
-            //puts(buf);
+            //snprintf(buf, BUF_LEN, "[GET_FREE_CHUNK] free chunk at %p"
+            //        " for size %zu\n", cur, size);
+            //write(STDERR, buf, len);
             return cur;
         }
     } while (cur->next && (cur = cur->next));
@@ -147,8 +150,8 @@ HeapChunk_t* get_free_chunk(size_t size) {
         cur = heap_info.p_start;
     }
     
-    snprintf(buf, BUF_LEN, "[GET_FREE_CHUNK] asking for more mem");
-    puts(buf);
+    //snprintf(buf, BUF_LEN, "[GET_FREE_CHUNK] asking for more mem\n");
+    //write(STDERR, buf, len);
 
     size_t inc_multiplier = size / HEAP_INC_STEP + 1;
     size_t inc_amount = inc_multiplier * HEAP_INC_STEP;
@@ -161,14 +164,15 @@ HeapChunk_t* get_free_chunk(size_t size) {
     // added more space to end of heap
     if (cur->next == NULL) {
         cur->size += inc_amount;
-        snprintf(buf, BUF_LEN, "[GET_FREE_CHUNK] adding more"
-                " space to end of heap");
-        puts(buf);
+        //snprintf(buf, BUF_LEN, "[GET_FREE_CHUNK] adding more"
+        //        " space to end of heap\n");
+        //write(STDERR, buf, len);
     } 
     // create a new free chunk at the end of the heap for user
     else {
-        snprintf(buf, BUF_LEN, "[GET_FREE_CHUNK] creating a new "
-                " chunk at end of heap");
+        //snprintf(buf, BUF_LEN, "[GET_FREE_CHUNK] creating a new "
+        //        " chunk at end of heap\n");
+        //write(STDERR, buf, len);
         HeapChunk_t* p_new_chunk = (HeapChunk_t*)old_end;
         p_new_chunk->next = NULL;
         p_new_chunk->prev = cur;
@@ -183,16 +187,20 @@ HeapChunk_t* get_free_chunk(size_t size) {
 
 void split_chunk(HeapChunk_t* chunk, size_t size) {
     intptr_t chunk_addr = (intptr_t) chunk;
-    intptr_t new_chunk_addr = (intptr_t) GET_DIV16_ADDR(chunk_addr + size);
+    intptr_t new_chunk_addr = (intptr_t) make_div_16(CHUNK_HEADER_SIZE + 
+                                                    chunk_addr + size);
     intptr_t next_chunk_addr = (intptr_t) chunk->next;
 
     HeapChunk_t* p_new_chunk = (HeapChunk_t*) new_chunk_addr; 
     HeapChunk_t* p_next_chunk = (HeapChunk_t*) next_chunk_addr;
 
-    size_t chunk_size = new_chunk_addr - chunk_addr + CHUNK_HEADER_SIZE;
-    // chunk is at end of heap
-    // create a new header
+    size_t chunk_size = new_chunk_addr - chunk_addr - CHUNK_HEADER_SIZE;
+    //snprintf(buf, BUF_LEN, "[SPLIT_CHUNK] chunk size %p %p header size:"
+    //    " %zu %zu\n", p_new_chunk, chunk, CHUNK_HEADER_SIZE, chunk_size);
+    //write(STDERR, buf, len);
     if (chunk->next == NULL) {
+        //snprintf(buf, BUF_LEN, "[SPLIT_CHUNK] adding to end of heap\n");
+        //write(STDERR, buf, len);
         p_new_chunk->next = NULL;
         p_new_chunk->prev = chunk;
         p_new_chunk->size = (intptr_t) sbrk(0) - new_chunk_addr + 
@@ -204,9 +212,12 @@ void split_chunk(HeapChunk_t* chunk, size_t size) {
         return;
     }
     
-    // chunk sandwiched with room
-    // create a new header
-    if (space_for_another_chunk(chunk, size)) {
+    if (next_chunk_addr - new_chunk_addr > 
+        size + MIN_CHUNK_SPACE) {
+        //snprintf(buf, BUF_LEN, "[SPLIT_CHUNK] sandwiched with "
+        //        " room req: %zu\n", size);
+        //write(STDERR, buf, len);
+        
         p_new_chunk->next = p_next_chunk;
         chunk->next = p_new_chunk;
         p_new_chunk->prev = chunk;
@@ -218,11 +229,12 @@ void split_chunk(HeapChunk_t* chunk, size_t size) {
         chunk->in_use = true;
         return;
     }
-    // chunk sandwiched with no room
-    // dont create a new header
+    //snprintf(buf, BUF_LEN, "[SPLIT_CHUNK] sandwiched with no room\n");
+    //write(STDERR, buf, len);
     return;
 }
 
+    // create a new header
 void* get_chunk_data_ptr(HeapChunk_t* chunk) {
     intptr_t ptr = (intptr_t) chunk;
     ptr = make_div_16(ptr + CHUNK_HEADER_SIZE);
@@ -238,17 +250,20 @@ HeapChunk_t* get_pchunk_from_pdata(void* ptr) {
 bool space_for_another_chunk(HeapChunk_t* chunk, size_t size) {
     intptr_t cur_chunk_addr = (intptr_t) get_chunk_data_ptr(chunk);
     intptr_t next_chunk_addr = (intptr_t) chunk->next;
-    size_t size_needed = (size_t)(next_chunk_addr - cur_chunk_addr);
-    return size_needed > MIN_CHUNK_SPACE;
+    intptr_t size_needed = (next_chunk_addr - cur_chunk_addr);
+    snprintf(buf, BUF_LEN, "[SPACE_ANOTHER_CHUNK] size asked %zu, "
+            " needed %x\n", size, size_needed);
+    write(STDERR, buf, len);
+    return size_needed > MIN_CHUNK_SPACE + size;
 }
 
 
 void print_chunk(HeapChunk_t* chunk) {
     snprintf(buf, BUF_LEN, "chunk info - p_start %p next: %p prev: %p"
-            " in_use: %d size: %zu p_data: %p", 
+            " in_use: %d size: %zu p_data: %p\n", 
             chunk, chunk->next, chunk->prev, chunk->in_use, chunk->size, 
             get_chunk_data_ptr(chunk));
-    puts(buf);
+    write(STDERR, buf, len);
     return;
 }
 
@@ -259,16 +274,16 @@ void print_heap() {
 
     HeapChunk_t* cur = heap_info.p_start;
     void* end = sbrk(0);
-    snprintf(buf, BUF_LEN, "\n[HEAP]\nstart: %p avail_mem %zu end %p", 
+    snprintf(buf, BUF_LEN, "\n[HEAP]\nstart: %p avail_mem %zu end %p\n", 
             heap_info.p_start, heap_info.avail_mem, end);
-    puts(buf);
+    write(STDERR, buf, len);
     while (cur != NULL) {
         print_chunk(cur);
         cur = cur->next;
     }
-    snprintf(buf, BUF_LEN, "[END HEAP]\n");
-    puts(buf);
-    
+    snprintf(buf, BUF_LEN, "[END HEAP]\n\n");
+    write(STDERR, buf, len); 
+
     return;
 }
 

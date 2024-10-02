@@ -35,6 +35,13 @@ malloc32.o: malloc.c
 malloc64.o: malloc.c
 	$(CC) $(CFLAGS) -m64 -c -o malloc64.o malloc.c
 
+main: main.o libmalloc.so
+	$(CC) -g -L./lib64 -o main main.o -lmalloc
+	./main
+
+main.o: main.c
+	$(CC) -Wall -g -c -o main.o main.c	
+
 hello: hello.o libmalloc.so 
 	$(CC) -g -L./lib64 -o hello hello.o -lmalloc
 	
