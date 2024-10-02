@@ -137,8 +137,11 @@ void* realloc(void* ptr, size_t size) {
 
 HeapChunk_t* get_free_chunk(size_t size) {
     HeapChunk_t* cur = heap_info.p_start;
+    intptr_t end_addr = (intptr_t) sbrk(0);
     do {
-        if (!cur->in_use && cur->size > (size + MIN_CHUNK_SPACE)) {
+        if (!cur->in_use && cur->size > (size + MIN_CHUNK_SPACE) &&
+            make_div_16((intptr_t) cur + size + MIN_CHUNK_SPACE) < 
+            end_addr) {
             //snprintf(buf, BUF_LEN, "[GET_FREE_CHUNK] free chunk at %p"
             //        " for size %zu\n", cur, size);
             //write(STDERR, buf, len);
@@ -193,7 +196,7 @@ void split_chunk(HeapChunk_t* chunk, size_t size) {
 
     HeapChunk_t* p_new_chunk = (HeapChunk_t*) new_chunk_addr; 
     HeapChunk_t* p_next_chunk = (HeapChunk_t*) next_chunk_addr;
-
+    void* p_end = sbrk(0);
     size_t chunk_size = new_chunk_addr - chunk_addr - CHUNK_HEADER_SIZE;
     //snprintf(buf, BUF_LEN, "[SPLIT_CHUNK] chunk size %p %p header size:"
     //    " %zu %zu\n", p_new_chunk, chunk, CHUNK_HEADER_SIZE, chunk_size);

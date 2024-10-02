@@ -12,8 +12,8 @@
 #define HEAP_INC_STEP     (1 << 16)
 #define CHUNK_HEADER_SIZE   (sizeof(struct HeapChunk_t))
 #define INIT_HEAP_PASSED    (0)
-#define HEAP_NOMEM_AVAIL    (16)
-#define MIN_CHUNK_SPACE     (16 + CHUNK_HEADER_SIZE)
+#define HEAP_NOMEM_AVAIL    (1)
+#define MIN_CHUNK_SPACE     (32 + CHUNK_HEADER_SIZE)
 #define GET_DIV16_ADDR(x)   ((x + 15) & ~0xf)
 #define STDERR              (2)
 

@@ -1,0 +1,3 @@
+#!/bin/bash
+LD_LIBRARY_PATH=$HOME/cpe453/asgn1:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH
