@@ -1,11 +1,13 @@
 C = gcc
 CFLAGS = -Wall -g -fPIC
 
-.PHONY: run clean malloc
+.PHONY: malloc clean core_clean run test
 
 all: intel-all malloc main
 
 # BUILD LIBS
+malloc: libmalloc.so libmalloc.a
+
 libmalloc.a: malloc.o
 	ar rcs libmalloc.a malloc.o
 
@@ -15,10 +17,8 @@ libmalloc.so: malloc.o
 malloc.o: malloc.c intel-all
 	$(CC) $(CFLAGS) -c malloc.c
 
-malloc: libmalloc.so
-	@echo "Libraries built."
 
-# NICO GIVEN
+# NICO GIVEN	
 intel-all: lib/libmalloc.so lib64/libmalloc.so
 
 lib/libmalloc.so: lib malloc32.o
