@@ -9,13 +9,14 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define HEAP_INC_STEP       (1 << 10)
+#define HEAP_INC_STEP       (1 << 16)
 #define INIT_HEAP_PASSED    (0)
 #define HEAP_NOMEM_AVAIL    (1)
 #define CHUNK_HEADER_SIZE   (sizeof(struct HeapChunk_t))
 #define MIN_CHUNK_DATA      (16)
 #define MIN_CHUNK_SPACE     ((intptr_t)(MIN_CHUNK_DATA + CHUNK_HEADER_SIZE))
-#define GET_DIV16_ADDR(x)   ((x + 15) & ~0xf)
+#define ENOUGH_MEM          (0)
+#define GET_DIV16_VAL(x)    ((x + 15) & ~0xf)
 
 
 struct HeapInfo_t {

@@ -59,11 +59,10 @@ nico_test: malloc
 
 
 clean:
-	rm -rf *.o *.a *.so main lib lib64 nico_test.o
+	rm -rf *.o *.a *.so main lib lib64 nico_test
 
 core_clean:
 	rm -rf core.*
 
 test:
 	~pn-cs453/demos/tryAsgn1 > test.log
-	make core_clean
