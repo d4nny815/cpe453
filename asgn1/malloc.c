@@ -81,7 +81,7 @@ void* realloc(void* ptr, size_t size) {
     }
     chunk->size += calc_tot_chunk_size(chunk->next);
     chunk->next = NULL;
-    split_chunk(chunk->next, req_size);
+    split_chunk(chunk, req_size);
   }
 
   else if (!chunk->next->in_use && req_size <= chunk->size + 
