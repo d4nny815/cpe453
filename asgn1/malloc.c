@@ -16,17 +16,19 @@ void* malloc(size_t size) {
     }
   }
   size_t req_size = GET_DIV16_ADDR(size);
+  if (req_size == 0) {
+    return  NULL;
+  }
   HeapChunk_t* p_chunk = get_free_chunk(req_size);
   if (p_chunk == NULL) {
-    int mem_error = ask_more_mem(size);
+    int mem_error = ask_more_mem(req_size);
     if (mem_error == HEAP_NOMEM_AVAIL) {
       return NULL;
     }
     p_chunk = heap_info.p_last;
-  } else {
-    split_chunk(p_chunk, req_size);
   }
-  return (void*)get_chunk_data_ptr(p_chunk);
+  split_chunk(p_chunk, req_size);
+  return (void*)get_chunk_data_addr(p_chunk);
 }
 
 
@@ -83,7 +85,6 @@ HeapChunk_t* get_free_chunk(size_t size) {
 }
 
 
-// TODO: 
 void split_chunk(HeapChunk_t* chunk, size_t size) {
   chunk->size = size;
   HeapChunk_t* p_new_chunk = (HeapChunk_t*) (get_chunk_data_addr(chunk) +
@@ -96,11 +97,18 @@ void split_chunk(HeapChunk_t* chunk, size_t size) {
     p_new_chunk->prev = chunk;
     chunk->next = p_new_chunk;
     p_new_chunk->size = calc_user_chunk_size(p_new_chunk);
-    p_new_chunk->in_use = false;
+    heap_info.p_last = p_new_chunk;
   } else {
     // TODO: sandwiched create a new header
-
+    printf("sandwich\n");
+    p_new_chunk->next = p_next_chunk;
+    p_new_chunk->prev = chunk;
+    chunk->next = p_new_chunk;
+    p_next_chunk->prev = p_new_chunk;
+    p_new_chunk->size = calc_user_chunk_size(p_new_chunk);
   }
+  
+  p_new_chunk->in_use = false;
   chunk->in_use = true;
 
   return;
@@ -115,6 +123,8 @@ int ask_more_mem(size_t req_amt) {
     errno = ENOMEM;
     return HEAP_NOMEM_AVAIL;
   }
+
+  heap_info.end_addr += inc_amt;
 
   if (heap_info.p_last->in_use) {
     HeapChunk_t* p_new = (HeapChunk_t*)get_chunk_end_addr(
@@ -146,11 +156,6 @@ intptr_t get_chunk_end_addr(HeapChunk_t* chunk) {
     return heap_info.end_addr;
   }
   return get_chunk_addr(chunk->next) - get_chunk_addr(chunk);
-}
-
-
-intptr_t get_chunk_data_ptr(HeapChunk_t* chunk) {
-  return GET_DIV16_ADDR((intptr_t) chunk + CHUNK_HEADER_SIZE);
 }
 
 
@@ -209,9 +214,10 @@ void print_chunk(HeapChunk_t* chunk) {
     return;
   }
   snprintf(buf, BUF_LEN, "[CHUNK] start_addr %p next %p prev %p" 
-          " tot size %zu user size %zu used %d\n", chunk, 
+          " tot size %zu user size %zu used %d data_addr %p\n", chunk, 
           chunk->next, chunk->prev, calc_tot_chunk_size(chunk), 
-          calc_user_chunk_size(chunk), chunk->in_use);
+          calc_user_chunk_size(chunk), chunk->in_use, 
+          (void*)get_chunk_data_addr);
   write(STDERR_FILENO, buf, buf_len);
   return;
 }

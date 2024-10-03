@@ -53,8 +53,14 @@ run: main
 gdb: main
 	gdb ./main
 
+
+nico_test: malloc 
+	$(CC) -g -L./lib64 -o nico_test lib.c nico_test.c -lmalloc
+	./nico_test
+
+
 clean:
-	rm -rf *.o *.a *.so main lib lib64
+	rm -rf *.o *.a *.so main lib lib64 nico_test.o
 
 core_clean:
 	rm -rf core.*

@@ -8,20 +8,19 @@ static char buf[PRINT_BUF_SIZE];
 int main(void) {
     print_heap();
     char *p1, *p2, *p3, *p4;
-    /*
     int i;
-    for (i = 0; i < 8192; i++) {
+    for (i = 0; i < 128; i++) {
         size_t size = i;
         p1 = malloc(size);
         if ((long)p1 & (long)0xf) {
             return 1;
         }
-        snprintf(buf, PRINT_BUF_SIZE, "%p", p1);
+        snprintf(buf, PRINT_BUF_SIZE, "%p with size %zu", p1, size);
         puts(buf);
     }
     
     print_heap();
-    */
+    /*
     p1 = (char*) malloc(PRINT_BUF_SIZE);
     //p1 = malloc(1024);
     p2 = (char*) malloc(2 * PRINT_BUF_SIZE);

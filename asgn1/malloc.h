@@ -9,7 +9,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define HEAP_INC_STEP       (1 << 16)
+#define HEAP_INC_STEP       (1 << 10)
 #define INIT_HEAP_PASSED    (0)
 #define HEAP_NOMEM_AVAIL    (1)
 #define CHUNK_HEADER_SIZE   (sizeof(struct HeapChunk_t))
