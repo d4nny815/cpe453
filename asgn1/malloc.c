@@ -35,14 +35,52 @@ void* malloc(size_t size) {
 void* realloc(void* ptr, size_t size) {return NULL;}
 
 
-void* calloc(size_t nmemb, size_t size) {return NULL;}
+void* calloc(size_t nmemb, size_t size) {
+  size_t actual_size = nmemb * size;
+  void* ptr = malloc(actual_size);
+  if (ptr == NULL) {
+    return NULL;
+  } 
+  return memset(ptr, 0, actual_size);
+}
 
 
 void free(void* ptr) {
-    if (ptr == NULL) {
-        return;
-    }
+  if (ptr == NULL) {
     return;
+  }
+
+  HeapChunk_t* p_cur = heap_info.p_start;
+  do {
+    if (ptr_in_chunk(ptr, p_cur)) {
+      break;
+    }
+    p_cur = p_cur->next;
+  } while (p_cur);
+
+  if (p_cur == NULL) {
+    return;
+  }
+
+  p_cur->in_use = false;
+
+  if (p_cur->prev != NULL && !p_cur->prev->in_use) {
+    HeapChunk_t* prev_chunk = p_cur->prev;
+    prev_chunk->next = p_cur->next;
+    p_cur->next->prev = prev_chunk;
+    prev_chunk->size = calc_user_chunk_size(prev_chunk);
+  }
+
+  if (p_cur->next != NULL && !p_cur->next->in_use) {
+    HeapChunk_t* next_chunk = p_cur->next;
+    p_cur->next = next_chunk->next;
+    if (next_chunk->next != NULL) {
+      next_chunk->next->prev = p_cur;
+    }
+    p_cur->size = calc_user_chunk_size(p_cur);
+  }
+
+  return;
 }
 
 
@@ -100,7 +138,6 @@ void split_chunk(HeapChunk_t* chunk, size_t size) {
     heap_info.p_last = p_new_chunk;
   } else {
     // TODO: sandwiched create a new header
-    printf("sandwich\n");
     p_new_chunk->next = p_next_chunk;
     p_new_chunk->prev = chunk;
     chunk->next = p_new_chunk;
@@ -151,11 +188,19 @@ bool space_for_another_chunk(HeapChunk_t* chunk, size_t req_size) {
 }
 
 
+bool ptr_in_chunk(void* ptr, HeapChunk_t* chunk) {
+  intptr_t ptr_addr = (intptr_t) ptr;
+  intptr_t chunk_data_addr = get_chunk_data_addr(chunk);
+  intptr_t chunk_end_addr = get_chunk_end_addr(chunk);
+  return chunk_data_addr <= ptr_addr && ptr_addr < chunk_end_addr; 
+}
+
+
 intptr_t get_chunk_end_addr(HeapChunk_t* chunk) {
   if (chunk->next == NULL) {
     return heap_info.end_addr;
   }
-  return get_chunk_addr(chunk->next) - get_chunk_addr(chunk);
+  return get_chunk_addr(chunk->next);
 }
 
 

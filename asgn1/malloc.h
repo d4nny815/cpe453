@@ -45,8 +45,7 @@ HeapChunk_t* get_free_chunk(size_t size);
 int ask_more_mem(size_t req_amt);
 void split_chunk(HeapChunk_t* chunk, size_t size);
 bool space_for_another_chunk(HeapChunk_t* chunk, size_t req_size);
-
-intptr_t get_chunk_data_ptr(HeapChunk_t* chunk);
+bool ptr_in_chunk(void* ptr, HeapChunk_t* chunk);
 
 size_t calc_user_chunk_size(HeapChunk_t* chunk);
 size_t calc_tot_chunk_size(HeapChunk_t* chunk);

@@ -56,7 +56,6 @@ gdb: main
 
 nico_test: malloc 
 	$(CC) -g -L./lib64 -o nico_test lib.c nico_test.c -lmalloc
-	./nico_test
 
 
 clean:
@@ -67,3 +66,4 @@ core_clean:
 
 test:
 	~pn-cs453/demos/tryAsgn1 > test.log
+	make core_clean
