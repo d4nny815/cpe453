@@ -10,6 +10,9 @@ static char buf[BUF_LEN];
 //      and append to header made
 
 void* malloc(size_t size) {
+  if (get_env("DEBUG_MALLOC")) {
+  
+  }
   if (!heap_info.exists) {
     if(init_heap() != INIT_HEAP_PASSED) {
       snprintf(buf, BUF_LEN, "[MALLOC] couldn't create mem\n");
@@ -19,7 +22,7 @@ void* malloc(size_t size) {
   }
 
   size_t req_size = GET_DIV16_VAL(size);
-  if (req_size == 0) {
+  if (req_size <= 0) {
     return  NULL;
   }
 
@@ -163,7 +166,6 @@ void free(void* ptr) {
 
 
 int init_heap() {
-  // TODO: ask for mem and check if div 16 good else make div 16;
   intptr_t p_cur_end = (intptr_t)sbrk(0);
   intptr_t p_end_div_16 = GET_DIV16_VAL(p_cur_end);
   void* start_ptr = sbrk((p_end_div_16 - p_cur_end) + HEAP_INC_STEP);
@@ -171,9 +173,9 @@ int init_heap() {
     errno = ENOMEM;
     return HEAP_NOMEM_AVAIL;
   }
-
-  heap_info.p_start = (HeapChunk_t*)start_ptr;
-  heap_info.p_last = (HeapChunk_t*)start_ptr;
+  intptr_t start_addr = p_end_div_16;
+  heap_info.p_start = (HeapChunk_t*)start_addr;
+  heap_info.p_last = (HeapChunk_t*)start_addr;
   heap_info.exists = true;
   heap_info.end_addr = (intptr_t) sbrk(0);
 
