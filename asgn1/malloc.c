@@ -45,6 +45,10 @@ void* realloc(void* ptr, size_t size) {
 
   HeapChunk_t* chunk = get_pchunk_from_pdata(ptr);
   size_t og_size = chunk->size;
+  if (chunk->next->size > HEAP_INC_STEP << 5) {
+    printf("FAILED");
+    exit(1);
+  }
 
   // TODO: shrink
   if (req_size <= chunk->size) {
@@ -97,7 +101,7 @@ void* realloc(void* ptr, size_t size) {
   // inbetween with no room -> malloc(req_size) then free(og)
   else {
     void* p_new = malloc(req_size);
-    memcpy(p_new, ptr, og_size); 
+    memmove(p_new, ptr, og_size);
     free(ptr);
     return p_new;
   }
@@ -133,6 +137,11 @@ void free(void* ptr) {
   if (p_cur == NULL) {
     return;
   }
+
+  if (!p_cur->in_use) {
+    return;
+  }
+
 
   p_cur->in_use = false;
 
@@ -258,7 +267,9 @@ bool space_for_another_chunk(HeapChunk_t* chunk, size_t req_size) {
     return new_chunk_end_addr < heap_info.end_addr;
   }
   intptr_t next_chunk_addr = get_chunk_addr(chunk->next);
-  return next_chunk_addr - new_chunk_end_addr > MIN_CHUNK_SPACE;
+  intptr_t cur_space = next_chunk_addr - new_chunk_end_addr;
+  bool is_space = cur_space > 32;
+  return is_space;
 }
 
 
