@@ -52,7 +52,7 @@ size_t calc_tot_chunk_size(HeapChunk_t* chunk);
 intptr_t get_chunk_addr(HeapChunk_t* chunk);
 intptr_t get_chunk_data_addr(HeapChunk_t* chunk);
 intptr_t get_chunk_end_addr(HeapChunk_t* chunk);
-
+HeapChunk_t* get_pchunk_from_pdata(void* ptr);
 
 
 void print_heap();

@@ -32,7 +32,79 @@ void* malloc(size_t size) {
 }
 
 
-void* realloc(void* ptr, size_t size) {return NULL;}
+void* realloc(void* ptr, size_t size) {
+  size_t req_size = GET_DIV16_ADDR(size);
+  if (size == 0) {
+    free(ptr);
+    return NULL;
+  }
+
+  if (ptr == NULL) {
+    return malloc(size);
+  }
+
+  HeapChunk_t* chunk = get_pchunk_from_pdata(ptr);
+  size_t og_size = chunk->size;
+
+  // TODO: shrink
+  if (req_size <= chunk->size) {
+    // TODO: if not enough for header do nothing
+    if (!space_for_another_chunk(chunk, req_size)) {
+      return ptr;
+    }
+    split_chunk(chunk, req_size);
+  }
+
+  // TODO: stay
+  // end of heap with room -> split
+  // end of heap with no room -> ask more then split
+  // 2nd end of heap with room -> split
+  // 2nd end of heap with no room -> ask more then split
+  // inbetween with space -> split
+  else if (chunk->next == NULL) {
+    if (!space_for_another_chunk(chunk, req_size)) {
+      // ask for more mem
+      int mem_error = ask_more_mem(req_size);
+      if (mem_error == HEAP_NOMEM_AVAIL) {
+        return NULL;
+      }
+    }
+    split_chunk(chunk, req_size);
+  }
+
+  else if (chunk->next->next == NULL) {
+    if (!space_for_another_chunk(chunk, req_size)) {
+      int mem_error = ask_more_mem(req_size);
+      if (mem_error == HEAP_NOMEM_AVAIL) {
+        return NULL;
+      }
+    }
+    chunk->size += calc_tot_chunk_size(chunk->next);
+    chunk->next = NULL;
+    split_chunk(chunk->next, req_size);
+  }
+
+  else if (!chunk->next->in_use && req_size <= chunk->size + 
+          calc_tot_chunk_size(chunk->next) + MIN_CHUNK_SPACE) {
+    chunk->next = chunk->next->next;
+    chunk->next->next->prev = chunk;
+    chunk->size = calc_user_chunk_size(chunk);
+    split_chunk(chunk, req_size);
+  }
+  
+  
+  // TODO: move
+  // inbetween with no room -> malloc(req_size) then free(og)
+  else {
+    void* p_new = malloc(req_size);
+    memcpy(p_new, ptr, og_size); 
+    free(ptr);
+    return p_new;
+  }
+  
+  
+  return ptr; 
+}
 
 
 void* calloc(size_t nmemb, size_t size) {
@@ -130,14 +202,12 @@ void split_chunk(HeapChunk_t* chunk, size_t size) {
   HeapChunk_t* p_next_chunk = chunk->next;
 
   if (chunk->next == NULL) {
-    // TODO: end of heap
     p_new_chunk->next = NULL;
     p_new_chunk->prev = chunk;
     chunk->next = p_new_chunk;
     p_new_chunk->size = calc_user_chunk_size(p_new_chunk);
     heap_info.p_last = p_new_chunk;
   } else {
-    // TODO: sandwiched create a new header
     p_new_chunk->next = p_next_chunk;
     p_new_chunk->prev = chunk;
     chunk->next = p_new_chunk;
@@ -184,7 +254,11 @@ bool space_for_another_chunk(HeapChunk_t* chunk, size_t req_size) {
   intptr_t new_chunk_end_addr = get_chunk_data_addr(chunk);
   new_chunk_end_addr += req_size;
   new_chunk_end_addr += CHUNK_HEADER_SIZE;
-  return new_chunk_end_addr < heap_info.end_addr;
+  if (chunk->next == NULL) {
+    return new_chunk_end_addr < heap_info.end_addr;
+  }
+  intptr_t next_chunk_addr = get_chunk_addr(chunk->next);
+  return next_chunk_addr - new_chunk_end_addr > MIN_CHUNK_SPACE;
 }
 
 
@@ -227,6 +301,13 @@ intptr_t get_chunk_addr(HeapChunk_t* chunk) {
 
 intptr_t get_chunk_data_addr(HeapChunk_t* chunk) {
   return (intptr_t) chunk + CHUNK_HEADER_SIZE;
+}
+
+
+HeapChunk_t* get_pchunk_from_pdata(void* ptr) {
+  intptr_t ptr_addr = (intptr_t) ptr;
+  ptr_addr -= CHUNK_HEADER_SIZE;
+  return (HeapChunk_t*) ptr_addr;
 }
 
 
