@@ -264,7 +264,7 @@ bool space_for_another_chunk(HeapChunk_t* chunk, size_t req_size) {
   }
   intptr_t next_chunk_addr = get_chunk_addr(chunk->next);
   intptr_t cur_space = next_chunk_addr - new_chunk_end_addr;
-  bool is_space = cur_space > 32;
+  bool is_space = cur_space > MIN_CHUNK_SPACE;
   return is_space;
 }
 

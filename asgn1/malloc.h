@@ -14,7 +14,7 @@
 #define HEAP_NOMEM_AVAIL    (1)
 #define CHUNK_HEADER_SIZE   (sizeof(struct HeapChunk_t))
 #define MIN_CHUNK_DATA      (16)
-#define MIN_CHUNK_SPACE     (MIN_CHUNK_DATA + CHUNK_HEADER_SIZE)
+#define MIN_CHUNK_SPACE     ((intptr_t)(MIN_CHUNK_DATA + CHUNK_HEADER_SIZE))
 #define GET_DIV16_ADDR(x)   ((x + 15) & ~0xf)
 
 
