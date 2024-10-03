@@ -45,10 +45,6 @@ void* realloc(void* ptr, size_t size) {
 
   HeapChunk_t* chunk = get_pchunk_from_pdata(ptr);
   size_t og_size = chunk->size;
-  if (chunk->next->size > HEAP_INC_STEP << 5) {
-    printf("FAILED");
-    exit(1);
-  }
 
   // TODO: shrink
   if (req_size <= chunk->size) {
