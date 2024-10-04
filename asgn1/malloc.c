@@ -96,13 +96,32 @@ void* realloc(void* ptr, size_t size) {
   size_t req_size = GET_DIV16_VAL(size);
   if (size == 0) {
     free(ptr);
-    // TODO: debug
+    if (getenv("DEBUG_MALLOC")) {
+      int err = snprintf(buf, BUF_LEN, REALLOC_FORMAT, ptr, size, ptr, size);
+      if (err < 0) {
+        exit(1);
+      }
+      err = write(STDERR_FILENO, buf, buf_len);
+      if (err == -1) {
+        exit(1);
+      }
+    }
     return NULL;
   }
 
   if (ptr == NULL) {
     ptr = malloc(size);
-    // TODO: debuf
+    if (getenv("DEBUG_MALLOC")) {
+      int err = snprintf(buf, BUF_LEN, REALLOC_FORMAT, ptr, size, ptr, 
+                        get_pchunk_from_pdata(ptr)->size);
+      if (err < 0) {
+        exit(1);
+      }
+      err = write(STDERR_FILENO, buf, buf_len);
+      if (err == -1) {
+        exit(1);
+      }
+    }
     return ptr;
   }
 
@@ -117,7 +136,17 @@ void* realloc(void* ptr, size_t size) {
   else if (req_size < chunk->size) {
     // not enough room for another chunk so do nothing
     chunk->size = GET_DIV16_VAL(size);
-    // TODO: debug 
+    if (getenv("DEBUG_MALLOC")) {
+      int err = snprintf(buf, BUF_LEN, REALLOC_FORMAT, ptr, size, chunk, 
+                        chunk->size);
+      if (err < 0) {
+        exit(1);
+      }
+      err = write(STDERR_FILENO, buf, buf_len);
+      if (err == -1) {
+        exit(1);
+      }
+    }
     return ptr;
   }
 
@@ -126,7 +155,14 @@ void* realloc(void* ptr, size_t size) {
     if (!space_for_another_chunk(chunk, req_size)) {
       int mem_error = ask_more_mem(req_size);
       if (mem_error == HEAP_NOMEM_AVAIL) {
-        // TODO: debug
+        int err = snprintf(buf, BUF_LEN, "[MALLOC] NO memory available\n");
+        if (err < 0) {
+          exit(1);
+        }
+        err = write(STDERR_FILENO, buf, buf_len);
+        if (err == -1) {
+          exit(1);
+        }
         return NULL;
       }
     }
@@ -138,7 +174,14 @@ void* realloc(void* ptr, size_t size) {
     if (!space_for_another_chunk(chunk, req_size)) {
       int mem_error = ask_more_mem(req_size);
       if (mem_error == HEAP_NOMEM_AVAIL) {
-        // TODO: debug
+        int err = snprintf(buf, BUF_LEN, "[MALLOC] NO memory available\n");
+        if (err < 0) {
+          exit(1);
+        }
+        err = write(STDERR_FILENO, buf, buf_len);
+        if (err == -1) {
+          exit(1);
+        }
         return NULL;
       }
     }
@@ -161,11 +204,33 @@ void* realloc(void* ptr, size_t size) {
     void* p_new = malloc(req_size);
     memmove(p_new, ptr, og_size);
     free(ptr);
-    // TODO: debug
+    if (getenv("DEBUG_MALLOC")) {
+      int err = snprintf(buf, BUF_LEN, REALLOC_FORMAT, ptr, size, 
+                        get_pchunk_from_pdata(p_new), 
+                        get_pchunk_from_pdata(p_new)->size);
+      if (err < 0) {
+        exit(1);
+      }
+      err = write(STDERR_FILENO, buf, buf_len);
+      if (err == -1) {
+        exit(1);
+      }
+    }
     return p_new;
   }
   
-  // TODO: debug
+  if (getenv("DEBUG_MALLOC")) {
+    int err = snprintf(buf, BUF_LEN, REALLOC_FORMAT, ptr, size, 
+                      get_pchunk_from_pdata(ptr), 
+                      get_pchunk_from_pdata(ptr)->size);
+    if (err < 0) {
+      exit(1);
+    }
+    err = write(STDERR_FILENO, buf, buf_len);
+    if (err == -1) {
+      exit(1);
+    }
+  }
   return ptr; 
 }
 
