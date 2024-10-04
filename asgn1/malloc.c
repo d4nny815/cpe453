@@ -95,13 +95,15 @@ void* realloc(void* ptr, size_t size) {
   size_t og_size = chunk->size;
 
   // (shrink)
-  if (req_size <= chunk->size) {
-    // not enough room for another chunk so do nothing
-    if (!space_for_another_chunk(chunk, req_size)) {
-      // TODO: debug
-      return ptr;
-    }
+  if (req_size < chunk->size && space_for_another_chunk(chunk, req_size)) {
     split_chunk(chunk, req_size);
+  }
+
+  else if (req_size < chunk->size) {
+    // not enough room for another chunk so do nothing
+    chunk->size = GET_DIV16_VAL(size);
+    // TODO: debug 
+    return ptr;
   }
 
   // chunk is at end of heap (stay)
