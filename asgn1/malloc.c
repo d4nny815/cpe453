@@ -2,6 +2,21 @@
 
 static struct HeapInfo_t heap_info;
 
+static int init_heap();
+static HeapChunk_t* get_free_chunk(size_t size);
+static int ask_more_mem(size_t req_amt);
+static void split_chunk(HeapChunk_t* chunk, size_t size);
+static bool space_for_another_chunk(HeapChunk_t* chunk, size_t req_size);
+static bool ptr_in_chunk(void* ptr, HeapChunk_t* chunk);
+static size_t calc_user_chunk_size(HeapChunk_t* chunk);
+static size_t calc_tot_chunk_size(HeapChunk_t* chunk);
+static intptr_t get_chunk_addr(HeapChunk_t* chunk);
+static intptr_t get_chunk_data_addr(HeapChunk_t* chunk);
+static intptr_t get_chunk_end_addr(HeapChunk_t* chunk);
+static HeapChunk_t* get_pchunk_from_pdata(void* ptr);
+static void print_heap();
+static void print_chunk(HeapChunk_t* chunk);
+
 #define BUF_LEN     (1500)
 #define buf_len     (strlen(buf))
 static char buf[BUF_LEN];
@@ -245,7 +260,7 @@ static int init_heap() {
 }
 
 
-HeapChunk_t* get_free_chunk(size_t size) {
+static HeapChunk_t* get_free_chunk(size_t size) {
   HeapChunk_t* p_cur = heap_info.p_start;
   do {
     if (!p_cur->in_use && p_cur->size >= size && 
@@ -263,7 +278,7 @@ HeapChunk_t* get_free_chunk(size_t size) {
  * splits the chunk creating a new header after the req_size
  * will always be called when there is enough space for another header
 */
-void split_chunk(HeapChunk_t* chunk, size_t size) {
+static void split_chunk(HeapChunk_t* chunk, size_t size) {
   chunk->size = size;
   HeapChunk_t* p_new_chunk = (HeapChunk_t*) (get_chunk_data_addr(chunk) +
                                             size);
@@ -294,7 +309,7 @@ void split_chunk(HeapChunk_t* chunk, size_t size) {
  * request more mem from the OS
  * req_amt will be a multiple of 16
 */
-int ask_more_mem(size_t req_amt) {
+static int ask_more_mem(size_t req_amt) {
   size_t inc_multiplier = req_amt / HEAP_INC_STEP + 1;
   size_t inc_amt = inc_multiplier * HEAP_INC_STEP;
   void* old_end = sbrk(inc_amt);
@@ -322,7 +337,7 @@ int ask_more_mem(size_t req_amt) {
 }
 
 
-bool space_for_another_chunk(HeapChunk_t* chunk, size_t req_size) {
+static bool space_for_another_chunk(HeapChunk_t* chunk, size_t req_size) {
   intptr_t new_chunk_end_addr = get_chunk_data_addr(chunk) + req_size + 
                                 CHUNK_HEADER_SIZE;
   if (chunk->next == NULL) {
@@ -333,7 +348,7 @@ bool space_for_another_chunk(HeapChunk_t* chunk, size_t req_size) {
 }
 
 
-bool ptr_in_chunk(void* ptr, HeapChunk_t* chunk) {
+static bool ptr_in_chunk(void* ptr, HeapChunk_t* chunk) {
   intptr_t ptr_addr = (intptr_t) ptr;
   intptr_t chunk_data_addr = get_chunk_data_addr(chunk);
   intptr_t chunk_end_addr = get_chunk_end_addr(chunk);
@@ -341,7 +356,7 @@ bool ptr_in_chunk(void* ptr, HeapChunk_t* chunk) {
 }
 
 
-intptr_t get_chunk_end_addr(HeapChunk_t* chunk) {
+static intptr_t get_chunk_end_addr(HeapChunk_t* chunk) {
   if (chunk->next == NULL) {
     return heap_info.end_addr;
   }
@@ -349,7 +364,7 @@ intptr_t get_chunk_end_addr(HeapChunk_t* chunk) {
 }
 
 
-size_t calc_user_chunk_size(HeapChunk_t* chunk) {
+static size_t calc_user_chunk_size(HeapChunk_t* chunk) {
   if (chunk->next == NULL) {
     return (size_t)(heap_info.end_addr - get_chunk_data_addr(chunk));
   }
@@ -357,7 +372,7 @@ size_t calc_user_chunk_size(HeapChunk_t* chunk) {
 }
 
 
-size_t calc_tot_chunk_size(HeapChunk_t* chunk) {
+static size_t calc_tot_chunk_size(HeapChunk_t* chunk) {
   if (chunk->next == NULL) {
     return (size_t)(heap_info.end_addr - get_chunk_addr(chunk));
   }
@@ -365,24 +380,24 @@ size_t calc_tot_chunk_size(HeapChunk_t* chunk) {
 }
 
 
-intptr_t get_chunk_addr(HeapChunk_t* chunk) {
+static intptr_t get_chunk_addr(HeapChunk_t* chunk) {
   return (intptr_t) chunk;
 }
 
 
-intptr_t get_chunk_data_addr(HeapChunk_t* chunk) {
+static intptr_t get_chunk_data_addr(HeapChunk_t* chunk) {
   return (intptr_t) chunk + CHUNK_HEADER_SIZE;
 }
 
 
-HeapChunk_t* get_pchunk_from_pdata(void* ptr) {
+static HeapChunk_t* get_pchunk_from_pdata(void* ptr) {
   intptr_t ptr_addr = (intptr_t) ptr;
   ptr_addr -= CHUNK_HEADER_SIZE;
   return (HeapChunk_t*) ptr_addr;
 }
 
 
-void print_heap() {
+static void print_heap() {
   if (!getenv("DEBUG_MALLOC_ME")) {
     return;
   }
@@ -406,7 +421,7 @@ void print_heap() {
 }
 
 
-void print_chunk(HeapChunk_t* chunk) {
+static void print_chunk(HeapChunk_t* chunk) {
   if (!getenv("DEBUG_MALLOC_ME")) {
     return;
   }
