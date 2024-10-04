@@ -273,7 +273,18 @@ void* calloc(size_t nmemb, size_t size) {
 
 void free(void* ptr) {
   if (ptr == NULL) {
-    // TODO: debug
+    if (getenv("DEBUG_MALLOC")) {
+      int err = snprintf(buf, BUF_LEN, FREE_FORMAT, ptr, 
+                        get_pchunk_from_pdata(ptr), 
+                        get_pchunk_from_pdata(ptr)->size);
+      if (err < 0) {
+        exit(1);
+      }
+      err = write(STDERR_FILENO, buf, buf_len);
+      if (err == -1) {
+        exit(1);
+      }
+    }
     return;
   }
 
@@ -286,13 +297,35 @@ void free(void* ptr) {
   } while (p_cur);
 
   if (p_cur == NULL) {
-    // TODO: debug
+    if (getenv("DEBUG_MALLOC")) {
+      int err = snprintf(buf, BUF_LEN, FREE_FORMAT, ptr, 
+                        get_pchunk_from_pdata(ptr), 
+                        0);
+      if (err < 0) {
+        exit(1);
+      }
+      err = write(STDERR_FILENO, buf, buf_len);
+      if (err == -1) {
+        exit(1);
+      }
+    }
     return;
   }
 
   /* double free */
   if (!p_cur->in_use) {
-    // TODO: debug
+    if (getenv("DEBUG_MALLOC")) {
+      int err = snprintf(buf, BUF_LEN, FREE_FORMAT, ptr, 
+                        get_pchunk_from_pdata(ptr), 
+                        get_pchunk_from_pdata(ptr)->size);
+      if (err < 0) {
+        exit(1);
+      }
+      err = write(STDERR_FILENO, buf, buf_len);
+      if (err == -1) {
+        exit(1);
+      }
+    }
     return;
   }
 
@@ -317,7 +350,18 @@ void free(void* ptr) {
     p_cur->size = calc_user_chunk_size(p_cur);
   }
 
-  // TODO: debug
+  if (getenv("DEBUG_MALLOC")) {
+    int err = snprintf(buf, BUF_LEN, FREE_FORMAT, ptr, 
+                      get_pchunk_from_pdata(ptr), 
+                      get_pchunk_from_pdata(ptr)->size);
+    if (err < 0) {
+      exit(1);
+    }
+    err = write(STDERR_FILENO, buf, buf_len);
+    if (err == -1) {
+      exit(1);
+    }
+  }
 
   return;
 }
