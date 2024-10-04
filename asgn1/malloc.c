@@ -14,8 +14,6 @@ static intptr_t get_chunk_addr(HeapChunk_t* chunk);
 static intptr_t get_chunk_data_addr(HeapChunk_t* chunk);
 static intptr_t get_chunk_end_addr(HeapChunk_t* chunk);
 static HeapChunk_t* get_pchunk_from_pdata(void* ptr);
-static void print_heap();
-static void print_chunk(HeapChunk_t* chunk);
 
 #define BUF_LEN     (1500)
 #define buf_len     (strlen(buf))
@@ -274,9 +272,7 @@ void* calloc(size_t nmemb, size_t size) {
 void free(void* ptr) {
   if (ptr == NULL) {
     if (getenv("DEBUG_MALLOC")) {
-      int err = snprintf(buf, BUF_LEN, FREE_FORMAT, ptr, 
-                        get_pchunk_from_pdata(ptr), 
-                        get_pchunk_from_pdata(ptr)->size);
+      int err = snprintf(buf, BUF_LEN, FREE_FORMAT, ptr);
       if (err < 0) {
         exit(1);
       }
@@ -298,9 +294,7 @@ void free(void* ptr) {
 
   if (p_cur == NULL) {
     if (getenv("DEBUG_MALLOC")) {
-      int err = snprintf(buf, BUF_LEN, FREE_FORMAT, ptr, 
-                        get_pchunk_from_pdata(ptr), 
-                        0);
+      int err = snprintf(buf, BUF_LEN, FREE_FORMAT, ptr);
       if (err < 0) {
         exit(1);
       }
@@ -315,9 +309,7 @@ void free(void* ptr) {
   /* double free */
   if (!p_cur->in_use) {
     if (getenv("DEBUG_MALLOC")) {
-      int err = snprintf(buf, BUF_LEN, FREE_FORMAT, ptr, 
-                        get_pchunk_from_pdata(ptr), 
-                        get_pchunk_from_pdata(ptr)->size);
+      int err = snprintf(buf, BUF_LEN, FREE_FORMAT, ptr);
       if (err < 0) {
         exit(1);
       }
@@ -351,9 +343,7 @@ void free(void* ptr) {
   }
 
   if (getenv("DEBUG_MALLOC")) {
-    int err = snprintf(buf, BUF_LEN, FREE_FORMAT, ptr, 
-                      get_pchunk_from_pdata(ptr), 
-                      get_pchunk_from_pdata(ptr)->size);
+    int err = snprintf(buf, BUF_LEN, FREE_FORMAT, ptr);
     if (err < 0) {
       exit(1);
     }
@@ -528,39 +518,3 @@ static HeapChunk_t* get_pchunk_from_pdata(void* ptr) {
 }
 
 
-static void print_heap() {
-  if (!getenv("DEBUG_MALLOC_ME")) {
-    return;
-  }
-  if (!heap_info.exists) {
-    init_heap();
-  }
-  snprintf(buf, BUF_LEN, "\n[HEAP]\nstart_addr %p end_addr %p, last"
-          " chunk_addr %p\n", heap_info.p_start, 
-          (void*)heap_info.end_addr, heap_info.p_last);
-  write(STDERR_FILENO, buf, buf_len);
-  
-  HeapChunk_t* cur = heap_info.p_start;
-
-  while (cur != NULL) {
-    print_chunk(cur);
-    cur = cur->next;
-  }
-  snprintf(buf, BUF_LEN, "[END_HEAP]\n\n");
-  write(STDERR_FILENO, buf, buf_len);
-  return;
-}
-
-
-static void print_chunk(HeapChunk_t* chunk) {
-  if (!getenv("DEBUG_MALLOC_ME")) {
-    return;
-  }
-  snprintf(buf, BUF_LEN, "[CHUNK] start_addr %p next %p prev %p" 
-          " tot size %zu user size %zu used %d data_addr %p\n", chunk, 
-          chunk->next, chunk->prev, calc_tot_chunk_size(chunk), 
-          calc_user_chunk_size(chunk), chunk->in_use, 
-          (void*)get_chunk_data_addr);
-  write(STDERR_FILENO, buf, buf_len);
-  return;
-}
