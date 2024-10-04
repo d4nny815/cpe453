@@ -239,12 +239,34 @@ void* calloc(size_t nmemb, size_t size) {
   size_t actual_size = nmemb * size;
   void* ptr = malloc(actual_size);
   if (ptr == NULL) {
-    // TODO: debug
+    if (getenv("DEBUG_MALLOC")) {
+      int err = snprintf(buf, BUF_LEN, CALLOC_FORMAT, nmemb, size, 
+                        get_pchunk_from_pdata(ptr), 
+                        get_pchunk_from_pdata(ptr)->size);
+      if (err < 0) {
+        exit(1);
+      }
+      err = write(STDERR_FILENO, buf, buf_len);
+      if (err == -1) {
+        exit(1);
+      }
+    }
     return NULL;
   } 
 
   ptr = memset(ptr, 0, actual_size);
-  // TODO: debug
+  if (getenv("DEBUG_MALLOC")) {
+    int err = snprintf(buf, BUF_LEN, REALLOC_FORMAT, ptr, size, 
+                      get_pchunk_from_pdata(ptr), 
+                      get_pchunk_from_pdata(ptr)->size);
+    if (err < 0) {
+      exit(1);
+    }
+    err = write(STDERR_FILENO, buf, buf_len);
+    if (err == -1) {
+      exit(1);
+    }
+  }
   return ptr;
 }
 
