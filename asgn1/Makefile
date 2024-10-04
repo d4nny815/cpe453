@@ -1,9 +1,9 @@
 C = gcc
 CFLAGS = -Wall -g -fPIC
 
-.PHONY: malloc clean core_clean run test
+.PHONY: malloc clean run test
 
-all: intel-all malloc main
+all: intel-all malloc
 
 # BUILD LIBS
 malloc: libmalloc.so libmalloc.a
@@ -53,16 +53,8 @@ run: main
 gdb: main
 	gdb ./main
 
-
-nico_test: malloc 
-	$(CC) -g -L./lib64 -o nico_test lib.c nico_test.c -lmalloc
-
-
 clean:
-	rm -rf *.o *.a *.so main lib lib64 nico_test
-
-core_clean:
-	rm -rf core.*
+	rm -rf *.o *.a *.so main lib lib64 
 
 test:
 	~pn-cs453/demos/tryAsgn1 > test.log
