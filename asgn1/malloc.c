@@ -19,11 +19,6 @@ static HeapChunk_t* get_pchunk_from_pdata(void* ptr);
 #define buf_len     (strlen(buf))
 static char buf[BUF_LEN];
 
-#define MALLOC_FORMAT   ("MALLOC: malloc(%zu)      => (ptr=%p, size=%zu)\n")
-#define CALLOC_FORMAT   ("MALLOC: calloc(%zu, %zu) => (ptr=%p, size=%zu)\n")
-#define REALLOC_FORMAT  ("MALLOC: realloc(%p, %zu) => (ptr=%p, size=%zu)\n")
-#define FREE_FORMAT     ("MALLOC: free(%p)\n")
-
 
 void* malloc(size_t size) {
   
@@ -44,7 +39,7 @@ void* malloc(size_t size) {
   size_t req_size = GET_DIV16_VAL(size);
   if (req_size < 0) {
     if (getenv("DEBUG_MALLOC")) {
-      int err = snprintf(buf, BUF_LEN, MALLOC_FORMAT, size, NULL, req_size);
+      int err = snprintf(buf, BUF_LEN, "MALLOC: malloc(%zu)      => (ptr=%p, size=%zu)\n", size, NULL, req_size);
       if (err < 0) {
         exit(1);
       }
@@ -76,7 +71,7 @@ void* malloc(size_t size) {
   split_chunk(p_chunk, req_size);
   
   if (getenv("DEBUG_MALLOC")) {
-    int err = snprintf(buf, BUF_LEN, MALLOC_FORMAT, size, p_chunk, req_size);
+    int err = snprintf(buf, BUF_LEN, "MALLOC: malloc(%zu)      => (ptr=%p, size=%zu)\n", size, p_chunk, req_size);
     if (err < 0) {
       exit(1);
     }
@@ -95,7 +90,7 @@ void* realloc(void* ptr, size_t size) {
   if (size == 0) {
     free(ptr);
     if (getenv("DEBUG_MALLOC")) {
-      int err = snprintf(buf, BUF_LEN, REALLOC_FORMAT, ptr, size, ptr, size);
+      int err = snprintf(buf, BUF_LEN, "MALLOC: realloc(%p, %zu) => (ptr=%p, size=%zu)\n", ptr, size, ptr, size);
       if (err < 0) {
         exit(1);
       }
@@ -110,7 +105,7 @@ void* realloc(void* ptr, size_t size) {
   if (ptr == NULL) {
     ptr = malloc(size);
     if (getenv("DEBUG_MALLOC")) {
-      int err = snprintf(buf, BUF_LEN, REALLOC_FORMAT, ptr, size, ptr, 
+      int err = snprintf(buf, BUF_LEN, "MALLOC: realloc(%p, %zu) => (ptr=%p, size=%zu)\n", ptr, size, ptr, 
                         get_pchunk_from_pdata(ptr)->size);
       if (err < 0) {
         exit(1);
@@ -135,7 +130,7 @@ void* realloc(void* ptr, size_t size) {
     // not enough room for another chunk so do nothing
     chunk->size = GET_DIV16_VAL(size);
     if (getenv("DEBUG_MALLOC")) {
-      int err = snprintf(buf, BUF_LEN, REALLOC_FORMAT, ptr, size, chunk, 
+      int err = snprintf(buf, BUF_LEN, "MALLOC: realloc(%p, %zu) => (ptr=%p, size=%zu)\n", ptr, size, chunk, 
                         chunk->size);
       if (err < 0) {
         exit(1);
@@ -203,7 +198,7 @@ void* realloc(void* ptr, size_t size) {
     memmove(p_new, ptr, og_size);
     free(ptr);
     if (getenv("DEBUG_MALLOC")) {
-      int err = snprintf(buf, BUF_LEN, REALLOC_FORMAT, ptr, size, 
+      int err = snprintf(buf, BUF_LEN, "MALLOC: realloc(%p, %zu) => (ptr=%p, size=%zu)\n", ptr, size, 
                         get_pchunk_from_pdata(p_new), 
                         get_pchunk_from_pdata(p_new)->size);
       if (err < 0) {
@@ -218,7 +213,7 @@ void* realloc(void* ptr, size_t size) {
   }
   
   if (getenv("DEBUG_MALLOC")) {
-    int err = snprintf(buf, BUF_LEN, REALLOC_FORMAT, ptr, size, 
+    int err = snprintf(buf, BUF_LEN, "MALLOC: realloc(%p, %zu) => (ptr=%p, size=%zu)\n", ptr, size, 
                       get_pchunk_from_pdata(ptr), 
                       get_pchunk_from_pdata(ptr)->size);
     if (err < 0) {
@@ -238,7 +233,7 @@ void* calloc(size_t nmemb, size_t size) {
   void* ptr = malloc(actual_size);
   if (ptr == NULL) {
     if (getenv("DEBUG_MALLOC")) {
-      int err = snprintf(buf, BUF_LEN, CALLOC_FORMAT, nmemb, size, 
+      int err = snprintf(buf, BUF_LEN, "MALLOC: calloc(%zu, %zu) => (ptr=%p, size=%zu)\n", nmemb, size, 
                         get_pchunk_from_pdata(ptr), 
                         get_pchunk_from_pdata(ptr)->size);
       if (err < 0) {
@@ -254,7 +249,7 @@ void* calloc(size_t nmemb, size_t size) {
 
   ptr = memset(ptr, 0, actual_size);
   if (getenv("DEBUG_MALLOC")) {
-    int err = snprintf(buf, BUF_LEN, REALLOC_FORMAT, ptr, size, 
+    int err = snprintf(buf, BUF_LEN, "MALLOC: realloc(%p, %zu) => (ptr=%p, size=%zu)\n", ptr, size, 
                       get_pchunk_from_pdata(ptr), 
                       get_pchunk_from_pdata(ptr)->size);
     if (err < 0) {
@@ -272,7 +267,7 @@ void* calloc(size_t nmemb, size_t size) {
 void free(void* ptr) {
   if (ptr == NULL) {
     if (getenv("DEBUG_MALLOC")) {
-      int err = snprintf(buf, BUF_LEN, FREE_FORMAT, ptr);
+      int err = snprintf(buf, BUF_LEN, "MALLOC: free(%p)\n", ptr);
       if (err < 0) {
         exit(1);
       }
@@ -294,7 +289,7 @@ void free(void* ptr) {
 
   if (p_cur == NULL) {
     if (getenv("DEBUG_MALLOC")) {
-      int err = snprintf(buf, BUF_LEN, FREE_FORMAT, ptr);
+      int err = snprintf(buf, BUF_LEN, "MALLOC: free(%p)\n", ptr);
       if (err < 0) {
         exit(1);
       }
@@ -309,7 +304,7 @@ void free(void* ptr) {
   /* double free */
   if (!p_cur->in_use) {
     if (getenv("DEBUG_MALLOC")) {
-      int err = snprintf(buf, BUF_LEN, FREE_FORMAT, ptr);
+      int err = snprintf(buf, BUF_LEN, "MALLOC: free(%p)\n", ptr);
       if (err < 0) {
         exit(1);
       }
@@ -343,7 +338,7 @@ void free(void* ptr) {
   }
 
   if (getenv("DEBUG_MALLOC")) {
-    int err = snprintf(buf, BUF_LEN, FREE_FORMAT, ptr);
+    int err = snprintf(buf, BUF_LEN, "MALLOC: free(%p)\n", ptr);
     if (err < 0) {
       exit(1);
     }
