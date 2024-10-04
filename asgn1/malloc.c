@@ -6,9 +6,9 @@ static struct HeapInfo_t heap_info;
 #define buf_len     (strlen(buf))
 static char buf[BUF_LEN];
 
-#define MALLOC_FORMAT   ("MALLOC: malloc(%d)      => (ptr=%p, size=%d)\n")
-#define CALLOC_FORMAT   ("MALLOC: calloc(%d, %d)  => (ptr=%p, size=%d)\n")
-#define REALLOC_FORMAT  ("MALLOC: realloc(%p, %d) => (ptr=%p, size=%d)\n")
+#define MALLOC_FORMAT   ("MALLOC: malloc(%zu)      => (ptr=%p, size=%zu)\n")
+#define CALLOC_FORMAT   ("MALLOC: calloc(%zu, %zu) => (ptr=%p, size=%zu)\n")
+#define REALLOC_FORMAT  ("MALLOC: realloc(%p, %zu) => (ptr=%p, size=%zu)\n")
 #define FREE_FORMAT     ("MALLOC: free(%p)\n")
 
 
@@ -30,7 +30,7 @@ void* malloc(size_t size) {
 
   size_t req_size = GET_DIV16_VAL(size);
   if (req_size < 0) {
-    if (get_env("DEBUG_MALLOC")) {
+    if (getenv("DEBUG_MALLOC")) {
       int err = snprintf(buf, BUF_LEN, MALLOC_FORMAT, size, NULL, req_size);
       if (err < 0) {
         exit(1);
@@ -62,7 +62,7 @@ void* malloc(size_t size) {
 
   split_chunk(p_chunk, req_size);
   
-  if (get_env("DEBUG_MALLOC")) {
+  if (getenv("DEBUG_MALLOC")) {
     int err = snprintf(buf, BUF_LEN, MALLOC_FORMAT, size, p_chunk, req_size);
     if (err < 0) {
       exit(1);
@@ -335,7 +335,7 @@ bool ptr_in_chunk(void* ptr, HeapChunk_t* chunk) {
   intptr_t ptr_addr = (intptr_t) ptr;
   intptr_t chunk_data_addr = get_chunk_data_addr(chunk);
   intptr_t chunk_end_addr = get_chunk_end_addr(chunk);
-  return chunk_data_addr <= ptr_addr < chunk_end_addr; 
+  return chunk_data_addr <= ptr_addr && ptr_addr < chunk_end_addr; 
 }
 
 
