@@ -6,23 +6,40 @@ static struct HeapInfo_t heap_info;
 #define buf_len     (strlen(buf))
 static char buf[BUF_LEN];
 
-//TODO: add split_chunk case where the next is free 
-//      and append to header made
+#define MALLOC_FORMAT   ("MALLOC: malloc(%d)      => (ptr=%p, size=%d)\n")
+#define CALLOC_FORMAT   ("MALLOC: calloc(%d, %d)  => (ptr=%p, size=%d)\n")
+#define REALLOC_FORMAT  ("MALLOC: realloc(%p, %d) => (ptr=%p, size=%d)\n")
+#define FREE_FORMAT     ("MALLOC: free(%p)\n")
+
 
 void* malloc(size_t size) {
-  if (get_env("DEBUG_MALLOC")) {
   
-  }
   if (!heap_info.exists) {
     if(init_heap() != INIT_HEAP_PASSED) {
-      snprintf(buf, BUF_LEN, "[MALLOC] couldn't create mem\n");
-      write(STDERR_FILENO, buf, buf_len);
+      int err = snprintf(buf, BUF_LEN, "[MALLOC] NO memory available\n");
+      if (err < 0) {
+        exit(1);
+      }
+      err = write(STDERR_FILENO, buf, buf_len);
+      if (err == -1) {
+        exit(1);
+      }
       return NULL;
     }
   }
 
   size_t req_size = GET_DIV16_VAL(size);
-  if (req_size <= 0) {
+  if (req_size < 0) {
+    if (get_env("DEBUG_MALLOC")) {
+      int err = snprintf(buf, BUF_LEN, MALLOC_FORMAT, size, NULL, req_size);
+      if (err < 0) {
+        exit(1);
+      }
+      err = write(STDERR_FILENO, buf, buf_len);
+      if (err == -1) {
+        exit(1);
+      }
+    }
     return  NULL;
   }
 
@@ -30,12 +47,31 @@ void* malloc(size_t size) {
   if (p_chunk == NULL) {
     int mem_error = ask_more_mem(req_size);
     if (mem_error == HEAP_NOMEM_AVAIL) {
+      int err = snprintf(buf, BUF_LEN, "[MALLOC] NO memory available\n");
+      if (err < 0) {
+        exit(1);
+      }
+      err = write(STDERR_FILENO, buf, buf_len);
+      if (err == -1) {
+        exit(1);
+      }
       return NULL;
     }
     p_chunk = heap_info.p_last;
   }
 
   split_chunk(p_chunk, req_size);
+  
+  if (get_env("DEBUG_MALLOC")) {
+    int err = snprintf(buf, BUF_LEN, MALLOC_FORMAT, size, p_chunk, req_size);
+    if (err < 0) {
+      exit(1);
+    }
+    err = write(STDERR_FILENO, buf, buf_len);
+    if (err == -1) {
+      exit(1);
+    }
+  }
 
   return (void*)get_chunk_data_addr(p_chunk);
 }
@@ -45,11 +81,14 @@ void* realloc(void* ptr, size_t size) {
   size_t req_size = GET_DIV16_VAL(size);
   if (size == 0) {
     free(ptr);
+    // TODO: debug
     return NULL;
   }
 
   if (ptr == NULL) {
-    return malloc(size);
+    ptr = malloc(size);
+    // TODO: debuf
+    return ptr;
   }
 
   HeapChunk_t* chunk = get_pchunk_from_pdata(ptr);
@@ -59,6 +98,7 @@ void* realloc(void* ptr, size_t size) {
   if (req_size <= chunk->size) {
     // not enough room for another chunk so do nothing
     if (!space_for_another_chunk(chunk, req_size)) {
+      // TODO: debug
       return ptr;
     }
     split_chunk(chunk, req_size);
@@ -69,6 +109,7 @@ void* realloc(void* ptr, size_t size) {
     if (!space_for_another_chunk(chunk, req_size)) {
       int mem_error = ask_more_mem(req_size);
       if (mem_error == HEAP_NOMEM_AVAIL) {
+        // TODO: debug
         return NULL;
       }
     }
@@ -80,6 +121,7 @@ void* realloc(void* ptr, size_t size) {
     if (!space_for_another_chunk(chunk, req_size)) {
       int mem_error = ask_more_mem(req_size);
       if (mem_error == HEAP_NOMEM_AVAIL) {
+        // TODO: debug
         return NULL;
       }
     }
@@ -102,9 +144,11 @@ void* realloc(void* ptr, size_t size) {
     void* p_new = malloc(req_size);
     memmove(p_new, ptr, og_size);
     free(ptr);
+    // TODO: debug
     return p_new;
   }
   
+  // TODO: debug
   return ptr; 
 }
 
@@ -113,14 +157,19 @@ void* calloc(size_t nmemb, size_t size) {
   size_t actual_size = nmemb * size;
   void* ptr = malloc(actual_size);
   if (ptr == NULL) {
+    // TODO: debug
     return NULL;
   } 
-  return memset(ptr, 0, actual_size);
+
+  ptr = memset(ptr, 0, actual_size);
+  // TODO: debug
+  return ptr;
 }
 
 
 void free(void* ptr) {
   if (ptr == NULL) {
+    // TODO: debug
     return;
   }
 
@@ -133,16 +182,19 @@ void free(void* ptr) {
   } while (p_cur);
 
   if (p_cur == NULL) {
+    // TODO: debug
     return;
   }
 
+  /* double free */
   if (!p_cur->in_use) {
+    // TODO: debug
     return;
   }
 
   p_cur->in_use = false;
 
-  // merge with prev if cur is not the start of the heap
+  /* merge with prev if cur is not the start of the heap */
   if (p_cur->prev != NULL && !p_cur->prev->in_use) {
     HeapChunk_t* prev_chunk = p_cur->prev;
     prev_chunk->next = p_cur->next;
@@ -150,7 +202,7 @@ void free(void* ptr) {
     prev_chunk->size = calc_user_chunk_size(prev_chunk);
   }
 
-  // merge with next if cur is not the last chunk in the heap
+  /* merge with next if cur is not the last chunk in the heap */ 
   if (p_cur->next != NULL && !p_cur->next->in_use) {
     HeapChunk_t* next_chunk = p_cur->next;
     p_cur->next = next_chunk->next;
@@ -160,6 +212,8 @@ void free(void* ptr) {
     }
     p_cur->size = calc_user_chunk_size(p_cur);
   }
+
+  // TODO: debug
 
   return;
 }
