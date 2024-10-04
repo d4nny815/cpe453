@@ -221,7 +221,7 @@ void free(void* ptr) {
 }
 
 
-int init_heap() {
+static int init_heap() {
   intptr_t p_cur_end = (intptr_t)sbrk(0);
   intptr_t p_end_div_16 = GET_DIV16_VAL(p_cur_end);
   void* start_ptr = sbrk((p_end_div_16 - p_cur_end) + HEAP_INC_STEP);

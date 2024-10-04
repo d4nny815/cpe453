@@ -40,7 +40,7 @@ void* realloc(void* ptr, size_t size);
 void* calloc(size_t nmemb, size_t size);
 void free(void* ptr);
 
-int init_heap();
+static int init_heap();
 
 HeapChunk_t* get_free_chunk(size_t size);
 int ask_more_mem(size_t req_amt);
