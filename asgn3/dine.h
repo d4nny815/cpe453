@@ -27,6 +27,7 @@
 #define PADDING             (8)
 #define LEFT_HEADER_PAD     ((NUM_PHILOSOPHERS + 8) / 2)
 #define RIGHT_HEADER_PAD    ((NUM_PHILOSOPHERS + 8) / 2 - 1)
+#define MIN_PHILS           (2)
 
 
 typedef enum PHIL_STATES_t {

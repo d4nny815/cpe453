@@ -36,6 +36,11 @@ int main(int argc, char** argv) {
         num_cycles = (int)tmp; 
     }
 
+    if (NUM_PHILOSOPHERS < MIN_PHILS) {
+        perror("Not enough philosophers to discuss");
+        exit(EXIT_FAILURE);
+    }
+
     // init semaphores
     for (i = 0; i < NUM_PHILOSOPHERS; i++) {
         if (sem_init(&forks[i], 0, 1) == -1) {
@@ -123,7 +128,7 @@ void* dine(void* arg) {
         dawdle();
         print_tings();    
     }
-    
+
     // all done
     phils[phil_ind].state = CHANGING; 
     print_tings();
