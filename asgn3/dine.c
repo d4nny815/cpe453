@@ -285,7 +285,7 @@ void print_tings() {
         // Print fork statuses for each philosopher
         for (j = 0; j < NUM_PHILOSOPHERS; j++) {
             if (GET_L_FORK_IND(i) == j) { 
-                printf("%c", phils[i].has_left_fork ? FORK_TO_CHAR(j) : '-');
+                printf("%c", phils[j].has_left_fork ? FORK_TO_CHAR(j) : '-');
             } else if (GET_R_FORK_IND(i) == j) {
                 printf("%c", phils[j].has_right_fork ? FORK_TO_CHAR(j) : '-');
             } else {
