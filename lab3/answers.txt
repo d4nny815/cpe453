@@ -1,0 +1,97 @@
+1) In Minix (or any other Unix), if user 2 links to a file owned by user 1, then user 1 removes the file, what happens when user 2 tries to read the file? (Tanenbaum and Woodhull, Ch. 1, Ex. 15)
+
+The second user still has access to the file since they never called rm(unlink) on it so MINIX will still have a file that exists even if user 1 doesn't.
+
+2) Under what circumstances is multiprogramming likely to increase CPU utilization? Why?
+
+If you have many IO bound problems mulitprogramming could increase CPU utilization since while processes are waiting for IO another process could do work, but they could be wasted time if many are waiting. If they are all Compute bound then only 1 process is running til its time is up. A good mix of both could optimize the utilization with a mix of both to do work while waiting on IO.
+
+3) Suppose a computer can execute 1 billion instructions/sec and that a system call takes 1000 instructions, including the trap and all the context switching. How many system calls can the computer execute per second and still have half the CPU capacity for running application code? (T&W 1-21)
+
+ (1e9 * .5) / 1000 => .5e9 / 1e3 => .5e6 = 500k system calls
+
+4) What is a race condition? What are the symptoms of a race condition?(T&W 2-9)
+
+When 2 or more things are trying to read or write at the same place at near same time leading to 1 of them getting the incorrect value. The symptoms are nondetermintisic behaviors, for example on 5 runs of a program they all give different values, or in a real time system something catastrophic could happen trying to read a safety variable.
+
+5) Does the busy waiting solution using the turn variable (Fig. 2-10 in T&W) work when the two processes are running on a shared-memory multiprocessor, that is, two CPUs, sharing a common memory? (T&W, 2-13)
+
+Yes it works and is safe. 
+
+6) Describe how an operating system that can disable interrupts could implement semaphores. That is, what steps would have to happen in which order to implement the semaphore opera-tions safely. (T&W, 2-10)
+
+The OS keeps track of a counter and waitlist for a semaphore. To do any of the up/down operations (critical section) the OS can disable interrupts to do them, and when a process get blocked it can be added back into the scheduler during the critical section.
+
+7) Round robin schedulers normally maintain a list of all runnable processes, with each process occurring exactly once in the list. What would happen if a process occurred twice in the list? Can you think of any reason for allowing this? (T&W, 2-25) (And what is the reason. “Yes” or “no” would not be considered a sufficient answer.)
+
+If a process in the schedulers list multiple times it would increase the amount of overall time its running while still remaining "fair" to otherprocesses in the list, giving a bit of a priority for that task. I could see it being used to if you wanted to give a task more priority.
+
+8) Five batch jobs, A through E, arrive at a computer center, in alphabetical order, at almost the same time. They have estimated running times of 10, 3, 4, 7, and 6 seconds respectively. Their (externally determined) priorities are 3, 5, 2, 1, and 4, respectively, with 5 being the highest priority. For each of the following scheduling algorithms, determine the time at which each job completes and the mean process turnaround time. Assume a 1 second quantum and ignore process switching overhead. (Modified from T&W, 2-28)
+
+(a) Round robin.
+    
+    ABCDE ABCDE ABCDE ACDE ADE ADE ADE AAA
+
+    Process:    Time (s):
+    A           30
+    B           11
+    C           15
+    D           24
+    E           20
+    MTT = 100 / 5 = 20s 
+
+(b) Priority scheduling.
+
+    DDDDDDD CCCC AAAAAAAAAA EEEEEE BBB 
+
+    Process:    Time (s):
+    A           10 
+    B           3
+    C           4
+    D           7
+    E           6
+    MTT = 30 / 5 = 6s 
+
+(c) First-come, first served (given that they arrive in alphabetical order).
+    
+    AAAAAAAAAA BBB CCCC DDDDDDD EEEEEE
+
+    Process:    Time (s):
+    A           10 
+    B           3
+    C           4
+    D           7
+    E           6
+    MTT = 30 / 5 = 6s 
+
+(d) Shortest job first
+    
+    BBB CCCC EEEEEE DDDDDDD AAAAAAAAAA
+    
+    Process:    Time (s):
+    A           10 
+    B           3
+    C           4
+    D           7
+    E           6
+    MTT = 30 / 5 = 6s 
+
+9) Re-do problem 8a with the modification that job D is IO bound. After each 500ms it is allowed to run, it blocks for an IO operation that takes 1s to complete. The IO processing itself doesn’t take any noticeable time. Assume that jobs moving from the blocked state to the ready state are placed at the end of the run queue. If a blocked job becomes runnable at the same time a running process’s quantum is up, the formerly blocked job is placed back on the queue ahead of the other one.
+
+    ABCDE ABCDE ABCDE ACDE ADE ADE ADE AD AD AD AD D X D X D X D X D
+
+    Process:    Time (s):
+    A           27.5
+    B           10
+    C           13.5
+    D           31
+    E           18.5
+    MTT = 100.5 / 5 = 20.1s 
+
+
+
+10) A CPU-bound process running on CTSS needs 30 quanta to complete. How many times must it be swapped in, including the first time (before it has run at all)? Assume that there are always other runnable jobs and that the number of priority classes is unlimited. (T&W, 2-29)
+
+I would need to swap 5 times, since everytime it swaps it run for twice as long as it currently did. To solve for the number of swaps I came up with 2^s - 1 > q where s is the number of swaps and q is the quanta to complete. Since q is 30, s is 5 to make the equation true and it makes sense since that would mean the program runs for at most 31 quanta which is more the amount needed.
+
+
