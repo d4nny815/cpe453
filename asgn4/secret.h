@@ -11,7 +11,7 @@ typedef struct SecretState_t {
     int fd_open_counter;
     int is_readable;
     int owned;
-    uid_t owner;
+    uid_t owner_uid;
     int read_pos;
     int write_pos;
     char buffer[SECRET_SIZE];

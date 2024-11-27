@@ -15,24 +15,25 @@
 //                     u64_t position, iovec_t* iov, unsigned nr_req) );
 // FORWARD _PROTOTYPE( void secret_geometry, (struct partition* entry) );
 // FORWARD _PROTOTYPE( int secret_ioctl, (struct driver* d, message* m) );
-char* secret_name(void);
-int secret_open(struct driver* d, message* m);
-int secret_close(struct driver* d, message* m);
-struct device* secret_prepare(int device);
-int secret_transfer(int procnr, int opcode,
+PRIVATE char* secret_name(void);
+PRIVATE int secret_open(struct driver* d, message* m);
+PRIVATE int secret_close(struct driver* d, message* m);
+PRIVATE struct device* secret_prepare(int device);
+PRIVATE int secret_transfer(int procnr, int opcode,
                    u64_t position, iovec_t* iov, unsigned nr_req);
-void secret_geometry(struct partition* entry);
-int secret_ioctl(struct driver* d, message* m);
+PRIVATE void secret_geometry(struct partition* entry);
+PRIVATE int secret_ioctl(struct driver* d, message* m);
 
 /* SEF functions */
 // FORWARD _PROTOTYPE( void sef_local_startup, (void) );
 // FORWARD _PROTOTYPE( int sef_cb_init, (int type, sef_init_info_t *info) );
 // FORWARD _PROTOTYPE( int sef_cb_lu_state_save, (int) );
 // FORWARD _PROTOTYPE( int lu_state_restore, (void) );
-void sef_local_startup(void);
-int sef_cb_init(int type, sef_init_info_t* info);
-int sef_cb_lu_state_save(int);
-int lu_state_restore(void);
+PRIVATE void sef_local_startup(void);
+PRIVATE int sef_cb_init(int type, sef_init_info_t* info);
+PRIVATE int sef_cb_lu_state_save(int);
+PRIVATE int lu_state_restore(void);
+
 
 /* Entry points to the hello driver */
 PRIVATE struct driver secret_tab = {
@@ -72,7 +73,7 @@ char* secret_name(void) {
 /* opens the device if free */
 int secret_open(struct driver* d, message* m) {
     struct ucred caller_process;
-    getnucred(m->IOENDPT, &caller_process);
+    getnucred(m->IO_ENDPT, &caller_process);
 
     int reading = m->COUNT & R_BIT;
     int writing = m->COUNT & W_BIT; 
@@ -87,7 +88,7 @@ int secret_open(struct driver* d, message* m) {
         else if (writing) {
             is_readable = TRUE;
         }
-        owner = caller_process.id;
+        owner_uid = caller_process.uid;
         owned = TRUE;
     }
     else if (owned) {
@@ -96,7 +97,7 @@ int secret_open(struct driver* d, message* m) {
             return EACCES;
         }
         else if (reading) { // ? check if needed?
-            if (owner != caller_process.id) {
+            if (owner_uid != caller_process.uid) {
                 printf("[OPEN] tring to read while owned by someone else\n");
                 return EACCES;
             }
@@ -111,11 +112,11 @@ int secret_open(struct driver* d, message* m) {
 /* closes the device */
 int secret_close(struct driver* d, message* m) {
     struct ucred caller_process;
-    getnucred(m->IOENDPT, &caller_process);
+    getnucred(m->IO_ENDPT, &caller_process);
 
     fd_open_counter--;
     if (fd_open_counter == 0 && !is_readable) {
-        owner = -1;
+        owner_uid = -1;
         owned = FALSE;
         memset(buffer, 0, SECRET_SIZE);
         write_pos = 0;
@@ -135,7 +136,7 @@ int secret_ioctl(struct driver* d, message* m) {
     }
     int ret = sys_safecopyfrom(m->IO_ENDPT, (vir_bytes)m->IO_GRANT, 0,
                                 (vir_bytes)&new_owner, sizeof(new_owner), D);
-    owner = new_owner;
+    owner_uid = new_owner;
 
     return ret;
 }
@@ -191,6 +192,7 @@ int secret_transfer(int procnr, int opcode,
             return EINVAL;
     }
 
+    return ret;
 }
 
 
@@ -207,7 +209,7 @@ PRIVATE void secret_geometry(struct partition* entry) {
 PRIVATE int sef_cb_lu_state_save(int state) {
     SecretState_t cur_secret;
     cur_secret.fd_open_counter = fd_open_counter;
-    cur_secret.owner = owner;
+    cur_secret.owner_uid = owner_uid;
     cur_secret.owned = owned;
     cur_secret.write_pos = write_pos;
     cur_secret.read_pos = read_pos;
@@ -226,7 +228,7 @@ PRIVATE int lu_state_restore() {
     
     ds_retrieve_mem(SECRET_STATE_NAME, (char*)&restored_secret, &len);
     fd_open_counter = restored_secret.fd_open_counter;
-    owner = restored_secret.owner;
+    owner_uid = restored_secret.owner_uid;
     owned = restored_secret.owned;
     write_pos = restored_secret.write_pos;
     read_pos = restored_secret.read_pos;
@@ -268,7 +270,7 @@ PRIVATE int sef_cb_init(int type, sef_init_info_t *info) {
             fd_open_counter = 0;
             is_readable = FALSE;
             owned = FALSE;
-            owner = -1;
+            owner_uid = -1;
             read_pos = 0;
             write_pos = 0;
             memset(buffer, 0, SECRET_SIZE); // ? do i need this?
