@@ -1,6 +1,13 @@
 #ifndef SECRET_H
 #define SECRET_H
 
+#include <minix/drivers.h>
+#include <minix/driver.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <minix/ds.h>
+#include <sys/ioc_secret.h>
+
 #define SECRET_MSG ("I am a secret hehe")
 
 #ifndef SECRET_SIZE

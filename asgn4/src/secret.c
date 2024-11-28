@@ -1,20 +1,17 @@
-#include <minix/drivers.h>
-#include <minix/chardriver.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <minix/ds.h>
 #include "secret.h"
 
 
 /* Function prototypes for secret driver */
-// FORWARD _PROTOTYPE( char* secret_name, (void) );
-// FORWARD _PROTOTYPE( int secret_open, (struct driver* d, message* m) );
-// FORWARD _PROTOTYPE( int secret_close, (struct driver* d, message* m) );
-// FORWARD _PROTOTYPE( struct device* secret_prepare, (int device) );
-// FORWARD _PROTOTYPE( int secret_transfer, (int procnr, int opcode,
-//                     u64_t position, iovec_t* iov, unsigned nr_req) );
-// FORWARD _PROTOTYPE( void secret_geometry, (struct partition* entry) );
-// FORWARD _PROTOTYPE( int secret_ioctl, (struct driver* d, message* m) );
+/*
+FORWARD _PROTOTYPE( char* secret_name, (void) );
+FORWARD _PROTOTYPE( int secret_open, (struct driver* d, message* m) );
+FORWARD _PROTOTYPE( int secret_close, (struct driver* d, message* m) );
+FORWARD _PROTOTYPE( struct device* secret_prepare, (int device) );
+FORWARD _PROTOTYPE( int secret_transfer, (int procnr, int opcode,
+                    u64_t position, iovec_t* iov, unsigned nr_req) );
+FORWARD _PROTOTYPE( void secret_geometry, (struct partition* entry) );
+FORWARD _PROTOTYPE( int secret_ioctl, (struct driver* d, message* m) );
+*/
 PRIVATE char* secret_name(void);
 PRIVATE int secret_open(struct driver* d, message* m);
 PRIVATE int secret_close(struct driver* d, message* m);
@@ -25,10 +22,12 @@ PRIVATE void secret_geometry(struct partition* entry);
 PRIVATE int secret_ioctl(struct driver* d, message* m);
 
 /* SEF functions */
-// FORWARD _PROTOTYPE( void sef_local_startup, (void) );
-// FORWARD _PROTOTYPE( int sef_cb_init, (int type, sef_init_info_t *info) );
-// FORWARD _PROTOTYPE( int sef_cb_lu_state_save, (int) );
-// FORWARD _PROTOTYPE( int lu_state_restore, (void) );
+/*
+FORWARD _PROTOTYPE( void sef_local_startup, (void) );
+FORWARD _PROTOTYPE( int sef_cb_init, (int type, sef_init_info_t *info) );
+FORWARD _PROTOTYPE( int sef_cb_lu_state_save, (int) );
+FORWARD _PROTOTYPE( int lu_state_restore, (void) );
+*/
 PRIVATE void sef_local_startup(void);
 PRIVATE int sef_cb_init(int type, sef_init_info_t* info);
 PRIVATE int sef_cb_lu_state_save(int);
@@ -64,19 +63,19 @@ PRIVATE int write_pos;
 PRIVATE char buffer[SECRET_SIZE];
 
 /* gets the name of the device */
-char* secret_name(void) {
+PRIVATE char* secret_name(void) {
     printf("Secret driver starting\n");
     return "secret";
 } 
 
 
 /* opens the device if free */
-int secret_open(struct driver* d, message* m) {
+PRIVATE int secret_open(struct driver* d, message* m) {
     struct ucred caller_process;
+    int reading, writing;
     getnucred(m->IO_ENDPT, &caller_process);
-
-    int reading = m->COUNT & R_BIT;
-    int writing = m->COUNT & W_BIT; 
+    reading = m->COUNT & R_BIT;
+    writing = m->COUNT & W_BIT; 
     if (!owned) {
         if (reading && writing) {
             printf("[OPEN] tring to RW while free\n");
@@ -96,7 +95,7 @@ int secret_open(struct driver* d, message* m) {
             printf("[OPEN] tring to write while owned\n");
             return EACCES;
         }
-        else if (reading) { // ? check if needed?
+        else if (reading) { 
             if (owner_uid != caller_process.uid) {
                 printf("[OPEN] tring to read while owned by someone else\n");
                 return EACCES;
@@ -110,7 +109,7 @@ int secret_open(struct driver* d, message* m) {
 }
 
 /* closes the device */
-int secret_close(struct driver* d, message* m) {
+PRIVATE int secret_close(struct driver* d, message* m) {
     struct ucred caller_process;
     getnucred(m->IO_ENDPT, &caller_process);
 
@@ -128,13 +127,13 @@ int secret_close(struct driver* d, message* m) {
 
 
 /* switch owners */
-int secret_ioctl(struct driver* d, message* m) {
+PRIVATE int secret_ioctl(struct driver* d, message* m) {
     uid_t new_owner;
-
+    int ret;
     if (m->REQUEST != SSGRANT) {
         return ENOTTY;
     }
-    int ret = sys_safecopyfrom(m->IO_ENDPT, (vir_bytes)m->IO_GRANT, 0,
+    ret = sys_safecopyfrom(m->IO_ENDPT, (vir_bytes)m->IO_GRANT, 0,
                                 (vir_bytes)&new_owner, sizeof(new_owner), D);
     owner_uid = new_owner;
 
@@ -143,7 +142,7 @@ int secret_ioctl(struct driver* d, message* m) {
 
 
 /* prepare the device (stolen from hello) */
-struct device* secret_prepare(int device) {
+PRIVATE struct device* secret_prepare(int device) {
     secret_device.dv_base.lo = 0;
     secret_device.dv_base.hi = 0;
     secret_device.dv_size.lo = 0;
@@ -153,7 +152,7 @@ struct device* secret_prepare(int device) {
 
 
 /* transfer data to/from the device */
-int secret_transfer(int procnr, int opcode, 
+PRIVATE int secret_transfer(int procnr, int opcode, 
                    u64_t position, iovec_t* iov, unsigned nr_req) {
     int bytes;
     int ret;
@@ -205,7 +204,7 @@ PRIVATE void secret_geometry(struct partition* entry) {
 }
 
 
-// save all the variables to be restored later
+/* save all the variables to be restored later */
 PRIVATE int sef_cb_lu_state_save(int state) {
     SecretState_t cur_secret;
     cur_secret.fd_open_counter = fd_open_counter;
@@ -262,7 +261,6 @@ PRIVATE void sef_local_startup() {
 
 /* initialize the driver */
 PRIVATE int sef_cb_init(int type, sef_init_info_t *info) {
-    //initialize the driver
     int do_announce_driver = TRUE;
 
     switch(type) {
@@ -273,7 +271,7 @@ PRIVATE int sef_cb_init(int type, sef_init_info_t *info) {
             owner_uid = -1;
             read_pos = 0;
             write_pos = 0;
-            memset(buffer, 0, SECRET_SIZE); // ? do i need this?
+            memset(buffer, 0, SECRET_SIZE); 
             break;
         case SEF_INIT_LU:
             lu_state_restore();
@@ -285,11 +283,11 @@ PRIVATE int sef_cb_init(int type, sef_init_info_t *info) {
             break;
     }
 
-    //announce when up
+    /* announce when up */
     if (do_announce_driver) {
         driver_announce();
     }
-    //been initialized properly
+    /* been initialized properly */
     return OK;
 }
 
