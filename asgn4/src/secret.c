@@ -2,16 +2,6 @@
 
 
 /* Function prototypes for secret driver */
-/*
-FORWARD _PROTOTYPE( char* secret_name, (void) );
-FORWARD _PROTOTYPE( int secret_open, (struct driver* d, message* m) );
-FORWARD _PROTOTYPE( int secret_close, (struct driver* d, message* m) );
-FORWARD _PROTOTYPE( struct device* secret_prepare, (int device) );
-FORWARD _PROTOTYPE( int secret_transfer, (int procnr, int opcode,
-                    u64_t position, iovec_t* iov, unsigned nr_req) );
-FORWARD _PROTOTYPE( void secret_geometry, (struct partition* entry) );
-FORWARD _PROTOTYPE( int secret_ioctl, (struct driver* d, message* m) );
-*/
 PRIVATE char* secret_name(void);
 PRIVATE int secret_open(struct driver* d, message* m);
 PRIVATE int secret_close(struct driver* d, message* m);
@@ -22,17 +12,10 @@ PRIVATE void secret_geometry(struct partition* entry);
 PRIVATE int secret_ioctl(struct driver* d, message* m);
 
 /* SEF functions */
-/*
-FORWARD _PROTOTYPE( void sef_local_startup, (void) );
-FORWARD _PROTOTYPE( int sef_cb_init, (int type, sef_init_info_t *info) );
-FORWARD _PROTOTYPE( int sef_cb_lu_state_save, (int) );
-FORWARD _PROTOTYPE( int lu_state_restore, (void) );
-*/
 PRIVATE void sef_local_startup(void);
 PRIVATE int sef_cb_init(int type, sef_init_info_t* info);
 PRIVATE int sef_cb_lu_state_save(int);
 PRIVATE int lu_state_restore(void);
-
 
 /* Entry points to the hello driver */
 PRIVATE struct driver secret_tab = {
@@ -64,7 +47,6 @@ PRIVATE char buffer[SECRET_SIZE];
 
 /* gets the name of the device */
 PRIVATE char* secret_name(void) {
-    printf("Secret driver starting\n");
     return "secret";
 } 
 
@@ -73,6 +55,15 @@ PRIVATE char* secret_name(void) {
 PRIVATE int secret_open(struct driver* d, message* m) {
     struct ucred caller_process;
     int reading, writing;
+    /*
+    In brightest code, in darkest compile, no relic of C89 shall beguile. 
+    Let those who cling to its ancient style, beware 
+    the future—it’s worth the trial.
+    
+    (curtousy of chatgpt but seriously i hate c89, c99 for life. 
+        let me declare variables anywhere)
+    */
+
     getnucred(m->IO_ENDPT, &caller_process);
     reading = m->COUNT & R_BIT;
     writing = m->COUNT & W_BIT; 
@@ -90,18 +81,17 @@ PRIVATE int secret_open(struct driver* d, message* m) {
         owner_uid = caller_process.uid;
         owned = TRUE;
     }
-    else if (owned) {
-        if (writing) {
-            printf("[OPEN] tring to write while owned\n");
+    
+    if (writing) { /* can only write once */
+        printf("[OPEN] trying to write while owned\n");
+        return EACCES;
+    }
+    else if (reading) { 
+        if (owner_uid != caller_process.uid) {
+            printf("[OPEN] trying to read while owned by someone else\n");
             return EACCES;
         }
-        else if (reading) { 
-            if (owner_uid != caller_process.uid) {
-                printf("[OPEN] tring to read while owned by someone else\n");
-                return EACCES;
-            }
-            is_readable = FALSE;
-        }
+        is_readable = FALSE;
     }
 
     fd_open_counter++;
