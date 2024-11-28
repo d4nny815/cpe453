@@ -60,13 +60,14 @@ PRIVATE int secret_open(struct driver* d, message* m) {
     Let those who cling to its ancient style, beware 
     the future—it’s worth the trial.
     
-    (curtousy of chatgpt but seriously i hate c89, c99 for life. 
-        let me declare variables anywhere)
+    ( courtesy of chatgpt for this poem but seriously i hate c89, 
+        c99 for life. let me declare variables anywhere)
     */
 
     getnucred(m->IO_ENDPT, &caller_process);
     reading = m->COUNT & R_BIT;
     writing = m->COUNT & W_BIT; 
+
     if (!owned) {
         if (reading && writing) {
             printf("[OPEN] tring to RW while free\n");
@@ -75,18 +76,18 @@ PRIVATE int secret_open(struct driver* d, message* m) {
         else if (reading) {
             is_readable = FALSE;
         }
-        else if (writing) {
+        else { /* writing to it so it becomes readable" */
             is_readable = TRUE;
         }
         owner_uid = caller_process.uid;
         owned = TRUE;
     }
-    else if (owned) {
+    else {
         if (writing) { /* can only write once */
             printf("[OPEN] trying to write while owned\n");
             return EACCES;
         }
-        else if (reading) { 
+        else { 
             if (owner_uid != caller_process.uid) {
                 printf("[OPEN] trying to read while owned by someone else\n");
                 return EACCES;
@@ -102,11 +103,13 @@ PRIVATE int secret_open(struct driver* d, message* m) {
 /* closes the device */
 PRIVATE int secret_close(struct driver* d, message* m) {
     struct ucred caller_process;
+
     getnucred(m->IO_ENDPT, &caller_process);
 
     fd_open_counter--;
+
     if (fd_open_counter == 0 && !is_readable) {
-        owner_uid = -1;
+        owner_uid = NO_OWNER_ID;
         owned = FALSE;
         memset(buffer, 0, SECRET_SIZE);
         write_pos = 0;
@@ -119,14 +122,16 @@ PRIVATE int secret_close(struct driver* d, message* m) {
 
 /* switch owners */
 PRIVATE int secret_ioctl(struct driver* d, message* m) {
-    uid_t new_owner;
+    uid_t new_owner_uid;
     int ret;
+
     if (m->REQUEST != SSGRANT) {
         return ENOTTY;
     }
+
     ret = sys_safecopyfrom(m->IO_ENDPT, (vir_bytes)m->IO_GRANT, 0,
-                                (vir_bytes)&new_owner, sizeof(new_owner), D);
-    owner_uid = new_owner;
+                                (vir_bytes)&new_owner_uid, sizeof(uid_t), D);
+    owner_uid = new_owner_uid;
 
     return ret;
 }
@@ -147,7 +152,7 @@ PRIVATE int secret_transfer(int procnr, int opcode,
                    u64_t position, iovec_t* iov, unsigned nr_req) {
     int bytes;
     int ret;
-
+    
     switch (opcode) {
         case DEV_GATHER_S: /* read from device */
             bytes = write_pos - read_pos < iov->iov_size ? 
@@ -158,26 +163,31 @@ PRIVATE int secret_transfer(int procnr, int opcode,
 
             if (ret = sys_safecopyto(procnr, iov->iov_addr, 0,
                                     (vir_bytes)(buffer + read_pos), 
-                                    bytes, D)) {
+                                    bytes, D) != OK) {
                 return ret;
             }
+
             iov->iov_size -= bytes;
             read_pos += bytes;
             break;
+
         case DEV_SCATTER_S: /* write to device */
             bytes = SECRET_SIZE - write_pos < iov->iov_size ? 
                     SECRET_SIZE - write_pos : iov->iov_size;
             if (bytes <= 0) { /* unsuccessful write but continue on */
                 return ENOSPC;
             }
+
             if (ret = sys_safecopyfrom(procnr, iov->iov_addr, 0,
                                     (vir_bytes)(buffer + write_pos), 
-                                    bytes, D)) {
+                                    bytes, D) != OK) {
                 return ret;
             }
+
             iov->iov_size -= bytes;
             write_pos += bytes;
             break;
+
         default:
             return EINVAL;
     }
@@ -192,6 +202,8 @@ PRIVATE void secret_geometry(struct partition* entry) {
     entry->cylinders = 0;
     entry->heads = 0;
     entry->sectors = 0;
+
+    return;
 }
 
 
@@ -203,8 +215,8 @@ PRIVATE int sef_cb_lu_state_save(int state) {
     cur_secret.owned = owned;
     cur_secret.write_pos = write_pos;
     cur_secret.read_pos = read_pos;
+    memcpy(cur_secret.buffer, buffer, SECRET_SIZE);
     
-    memcpy(cur_secret.buffer, buffer, sizeof(SECRET_SIZE));
     ds_publish_mem(SECRET_STATE_NAME, (char*)&cur_secret,
                     sizeof(SecretState_t), DSF_OVERWRITE);
     
@@ -217,12 +229,14 @@ PRIVATE int lu_state_restore() {
     size_t len;
     
     ds_retrieve_mem(SECRET_STATE_NAME, (char*)&restored_secret, &len);
+
     fd_open_counter = restored_secret.fd_open_counter;
     owner_uid = restored_secret.owner_uid;
     owned = restored_secret.owned;
     write_pos = restored_secret.write_pos;
     read_pos = restored_secret.read_pos;
-    memcpy(buffer, restored_secret.buffer, sizeof(SECRET_SIZE));
+    memcpy(buffer, restored_secret.buffer, SECRET_SIZE);
+
     ds_delete_mem(SECRET_STATE_NAME);
 
     return OK;
@@ -259,7 +273,7 @@ PRIVATE int sef_cb_init(int type, sef_init_info_t *info) {
             fd_open_counter = 0;
             is_readable = FALSE;
             owned = FALSE;
-            owner_uid = -1;
+            owner_uid = NO_OWNER_ID;
             read_pos = 0;
             write_pos = 0;
             memset(buffer, 0, SECRET_SIZE); 

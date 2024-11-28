@@ -9,11 +9,13 @@
 #include <sys/ioc_secret.h>
 
 #define SECRET_MSG ("I am a secret hehe")
+#define NO_OWNER_ID  (-1)
 
 #ifndef SECRET_SIZE
 #define SECRET_SIZE (8192)
 #endif
 
+/* struct for simplifing saving state */
 typedef struct SecretState_t {
     int fd_open_counter;
     int is_readable;
