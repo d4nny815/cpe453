@@ -81,17 +81,18 @@ PRIVATE int secret_open(struct driver* d, message* m) {
         owner_uid = caller_process.uid;
         owned = TRUE;
     }
-    
-    if (writing) { /* can only write once */
-        printf("[OPEN] trying to write while owned\n");
-        return EACCES;
-    }
-    else if (reading) { 
-        if (owner_uid != caller_process.uid) {
-            printf("[OPEN] trying to read while owned by someone else\n");
+    else if (owned) {
+        if (writing) { /* can only write once */
+            printf("[OPEN] trying to write while owned\n");
             return EACCES;
         }
-        is_readable = FALSE;
+        else if (reading) { 
+            if (owner_uid != caller_process.uid) {
+                printf("[OPEN] trying to read while owned by someone else\n");
+                return EACCES;
+            }
+            is_readable = FALSE;
+        }
     }
 
     fd_open_counter++;
