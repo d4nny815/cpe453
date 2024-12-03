@@ -1,0 +1,80 @@
+(T&W 4-1) A computer system has enough room to hold four programs in its main memory. These programs are idle waiting for I/O half the time. Assuming that all I/O operations are distributed randomly with even probability—that is, any given process is blocked waiting for I/O with probability 1/2 at any given time in its execution—what proportion of the time will you expect the CPU to be idle?
+
+The portion of idle time is prob ^ num_of_progs => 1/2 ^ 4 = 1/16 seconds of idle time. 
+
+2. (T&W 4-4) Using the page table of Fig. 4-8 in T&W, give the physical address corresponding to each of the following virtual addresses: (a) 20 (b) 4100 (c) 8300
+
+phys_addr = (virt_addr & ((1 << 12) - 1)) + page_frame
+
+a) 8212
+b) 4100
+c) 24684
+
+
+3. (T&W 4-8) A computer with a 32-bit address uses a two-level page table. Virtual addresses are split into a 9-bit top-level page table field, an 11-bit second-level page table field, and an offset. How large are the pages and how many are there in the address space?
+
+2 ^ 20 pages with a 4K page
+
+4. (T&W 4-14) A computer has four page frames. The time of loading, time of last access, and the R and M bits for each page are as shown below (the times are in clock ticks): 
+
+Page Loaded Last Ref.   R M
+0    126    279         0 0
+1    230    260         1 0
+2    120    272         1 1
+3    160    280         1 1
+
+(a) Which page will NRU replace?
+(b) Which page will FIFO replace?
+(c) Which page will LRU replace?
+(d) Which page will second chance replace?
+
+a) 0 because it is the only page with the ref bit cleared.
+b) 2 because it was loaded in the earliest.
+c) 1 because it oldest page referenced.
+d) 0 because it oldest page with the ref bit cleared.
+
+5. (Based on T&W 4-15) If FIFO page replacement is used with four page frames and eight pages, how many page faults will occur with the reference string 0713272013 if the four frames are initially empty. What will be the final contents of memory?
+
+initial faults: 4
+0 7 1 3 2 0
+x x 
+4 + 2 => 6 page faults with 1320
+
+6. Repeat Problem 5 for LRU replacement.
+
+initial faults: 4
+0 7 1 3 2 7 2 0 1 3
+x o x x o x
+4 + 4 => 8 pages faults with 2013
+
+7. (T&W 4-20) It has been observed that the number of instructions executed between page faults is directly proportional to the number of page frames allocated to a program. If the available memory is doubled, the mean interval between page faults is also doubled. Suppose that a normal instruction takes 1 microsecond, but if a page fault occurs, it takes 2001 microseconds (i.e. 2 msec to handle the fault). If a program takes 60 seconds to run, during which time it gets 15,000 page faults, how long would it take to run if twice as much memory were available?
+
+15000 * 2.001 us = 30.015 sec, time to deal with page faults
+60 - 30.015 = 29.985 sec, time spent doing work
+30.015 / 2 = 15.0075 sec, new time since mem doubled
+29.985 + 15.0075 = 44.9925 sec, time for new run
+
+8. (T&W 5-10) The Unix system has a call to read a directory entry. Since directories are just files, why is it necessary to have a special call? Can users not just read the raw directories themselves?
+
+It is important because directories have more contents in their header, inodes.
+
+9. (T&W 5-16) It has been suggested that the first part of each unix file be kept in the same disk block as its i-node. What good would this do?
+
+It helps for smaller files, for example, the file could fit in a single block and only require 1 block access.
+
+10. (T&W 5-17) The performance of a file system depends on the cache hit rate (fraction of blocks found in the cache) if it takes 1 msec to satisfy a request from the cache, but 40 msec to satisfy a request if a disk read is needed, give a formula for the mean time required to satisfy a request if the hit rate is h. Plot this function for values of h from 0 to 1.0.
+
+
+Time = 40 * (1 - h) + h
+
+11. (T&W 5-20) A disk has 4000 cylinders, each with 8 tracks of 512 blocks. A seek takes 1 msec per cylinder moved. If no attempt is made to put the blocks of a file close to each other, two blocks that are logically consecutive (i.e. follow one another in the file) will require an average seek, which takes 5 msec. If, however, the operating system makes an attempt to cluster related blocks, the mean interblock distance can be reduced to 2 cylinders and the seek time reduced to 100 microsec. How long does it take to read a 100 block file in both cases, if the rotational latency is 10 msec and the transfer time is 20 microsec per block?
+
+T_total = Blocks * (T_seek  + T_rotation + T_transfer )
+without clustering: 1502 ms
+with clustering: 1012 ms
+
+12. (T&W 5-24) Two computer science students, Carolyn and Elinor, are having a discussion about i-nodes. Carolyn maintains that memories have gotten so large and so cheap that when a file is opened, it is simpler and faster just to fetch a new copy of the i-node into the i-node table, rather than search the entire table to see if it is already there. Elinor disagrees. Who is right and why?
+
+Elinor is right because copying inodes would become very inefficient in memory.
+
+
